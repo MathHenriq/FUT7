@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="true">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+@keyframes popIn { 0%{ transform:scale(0.9); opacity:0; } 100%{ transform:scale(1); opacity:1; } }
+*{ box-sizing:border-box; }
+body{ margin:0; font-family:'Inter',sans-serif; background:#05070a; color:#eef2f6; -webkit-font-smoothing:antialiased; }
+a{ color:#4f8ef7; text-decoration:none; }
+a:hover{ color:#7aa9f9; }
+::-webkit-scrollbar{ width:8px; height:8px; }
+::-webkit-scrollbar-thumb{ background:#26313d; border-radius:4px; }
+select{ appearance:none; }
+</style>
+</helmet>
+<div style="min-height:100vh; width:100%; background:#05070a; color:#eef2f6;">
+  <div style="position:sticky; top:0; z-index:50; display:flex; align-items:center; justify-content:space-between; padding:14px 28px; background:#0b1016; border-bottom:1px solid #1b232c;">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <div style="width:12px; height:12px; background:#4f8ef7; transform:rotate(45deg); border-radius:2px;"></div>
+      <div style="font-family:'Barlow Condensed',sans-serif; font-weight:800; font-size:20px; letter-spacing:0.5px;">FUT7 <span style="color:#8b98a5; font-weight:600;">ANALYTICS</span></div>
+    </div>
+    <div style="display:flex; gap:4px;">
+      <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+        <div onClick="{{ t.onClick }}" style="padding:10px 16px; font-size:13px; font-weight:600; cursor:pointer; color:{{ t.color }}; border-bottom:2px solid {{ t.borderColor }};">{{ t.label }}</div>
+      </sc-for>
+    </div>
+  </div>
+
+  <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex; justify-content:center; gap:40px; padding:40px 24px; flex-wrap:wrap; align-items:flex-start;">
+      <div style="width:380px; background:#000; border-radius:40px; padding:14px; box-shadow:0 30px 60px rgba(0,0,0,0.5); flex-shrink:0;">
+        <div style="width:100%; height:800px; background:#0a0e13; border-radius:28px; overflow:hidden; position:relative; display:flex; flex-direction:column;">
+          <div style="flex:1; position:relative; background:linear-gradient(160deg,#0e1620,#161f2b); display:flex; align-items:center; justify-content:center;">
+            <div style="position:absolute; top:16px; left:16px; right:16px; display:flex; justify-content:space-between; font-size:11px; color:#8b98a5; font-weight:600;">
+              <div>AO VIVO · 34:12</div>
+              <div style="color:#eef2f6;">TIME A 2 — 1 TIME B</div>
+            </div>
+            <div style="width:64px; height:64px; border-radius:50%; background:rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.15);">
+              <div style="width:0; height:0; border-left:20px solid #eef2f6; border-top:12px solid transparent; border-bottom:12px solid transparent; margin-left:4px;"></div>
+            </div>
+            <div style="position:absolute; bottom:16px; left:16px; right:16px; height:4px; background:rgba(255,255,255,0.15); border-radius:2px;">
+              <div style="width:46%; height:100%; background:#4f8ef7; border-radius:2px;"></div>
+            </div>
+          </div>
+          <div style="background:#11161c; border-top:1px solid #232d38; border-radius:20px 20px 0 0; padding:18px 16px 22px; min-height:320px; display:flex; flex-direction:column; gap:14px;">
+            <div style="width:36px; height:4px; background:#2b3644; border-radius:2px; margin:0 auto;"></div>
+
+            <sc-if value="{{ mobile.idle }}" hint-placeholder-val="{{ true }}">
+              <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px;">
+                <sc-for list="{{ mobileEventTypes }}" as="et" hint-placeholder-count="5">
+                  <div onClick="{{ et.onClick }}" style="display:flex; flex-direction:column; align-items:center; gap:8px; padding:16px 8px; background:#1b232c; border:1px solid #26313d; border-radius:14px; cursor:pointer; min-height:88px; justify-content:center;">
+                    <div style="width:34px; height:34px; border-radius:8px; background:rgba(79,142,247,0.18); color:#4f8ef7; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800;">{{ et.mono }}</div>
+                    <div style="font-size:13px; font-weight:600; color:#eef2f6;">{{ et.label }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ mobile.flowActive }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; flex-direction:column; gap:14px;">
+                <div style="display:flex; align-items:center; justify-content:space-between;">
+                  <div onClick="{{ mobile.onBack }}" style="font-size:13px; color:#8b98a5; cursor:pointer;">‹ Voltar</div>
+                  <div style="font-size:13px; font-weight:700;">{{ mobile.eventTypeLabel }}</div>
+                  <div style="font-size:12px; color:#5b6774;">{{ mobile.stepDisplay }}</div>
+                </div>
+
+                <sc-if value="{{ mobile.showZone }}" hint-placeholder-val="{{ false }}">
+                  <div>
+                    <div style="font-size:12px; color:#8b98a5; margin-bottom:8px; font-weight:600;">ZONA DE FINALIZAÇÃO</div>
+                    <div style="display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr); gap:6px; height:230px; background:#0e1620; border:1px solid #232d38; border-radius:12px; padding:8px;">
+                      <sc-for list="{{ mobile.zoneItems }}" as="z" hint-placeholder-count="9">
+                        <div onClick="{{ z.onClick }}" style="display:flex; align-items:center; justify-content:center; text-align:center; font-size:10px; font-weight:600; color:#c3ccd4; padding:4px; border-radius:8px; cursor:pointer; background:{{ z.bg }}; border:1px solid {{ z.border }};">{{ z.label }}</div>
+                      </sc-for>
+                    </div>
+                    <div style="height:8px; background:#4f8ef7; border-radius:0 0 8px 8px; margin-top:4px; opacity:0.4;"></div>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ mobile.showDetail }}" hint-placeholder-val="{{ false }}">
+                  <div>
+                    <div style="font-size:12px; color:#8b98a5; margin-bottom:8px; font-weight:600;">COMO FOI O GOL</div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                      <sc-for list="{{ mobile.detailItems }}" as="d" hint-placeholder-count="4">
+                        <div onClick="{{ d.onClick }}" style="padding:18px 10px; border-radius:12px; text-align:center; font-size:14px; font-weight:600; cursor:pointer; background:{{ d.bg }}; border:1px solid {{ d.border }};">{{ d.label }}</div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ mobile.showAssist }}" hint-placeholder-val="{{ false }}">
+                  <div>
+                    <div style="font-size:12px; color:#8b98a5; margin-bottom:8px; font-weight:600;">ASSISTÊNCIA (OPCIONAL)</div>
+                    <div style="display:flex; flex-direction:column; gap:8px; max-height:260px; overflow-y:auto;">
+                      <sc-for list="{{ mobile.assistItems }}" as="p" hint-placeholder-count="8">
+                        <div onClick="{{ p.onClick }}" style="padding:12px 14px; border-radius:12px; cursor:pointer; font-size:14px; font-weight:600; background:{{ p.bg }}; border:1px solid {{ p.border }};">{{ p.label }}</div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ mobile.showCardColor }}" hint-placeholder-val="{{ false }}">
+                  <div>
+                    <div style="font-size:12px; color:#8b98a5; margin-bottom:8px; font-weight:600;">TIPO DE CARTÃO</div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                      <sc-for list="{{ mobile.cardColorItems }}" as="c" hint-placeholder-count="2">
+                        <div onClick="{{ c.onClick }}" style="display:flex; flex-direction:column; align-items:center; gap:8px; padding:16px 10px; border-radius:12px; cursor:pointer; background:{{ c.bg }}; border:1px solid {{ c.border }};">
+                          <div style="width:18px; height:24px; border-radius:2px; background:{{ c.dot }};"></div>
+                          <div style="font-size:13px; font-weight:600;">{{ c.label }}</div>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ mobile.showPlayer }}" hint-placeholder-val="{{ false }}">
+                  <div>
+                    <div style="font-size:12px; color:#8b98a5; margin-bottom:8px; font-weight:600;">JOGADOR</div>
+                    <div style="display:flex; flex-direction:column; gap:8px; max-height:260px; overflow-y:auto;">
+                      <sc-for list="{{ mobile.playerItems }}" as="p" hint-placeholder-count="10">
+                        <div onClick="{{ p.onClick }}" style="padding:12px 14px; border-radius:12px; cursor:pointer; font-size:14px; font-weight:600; background:{{ p.bg }}; border:1px solid {{ p.border }};">{{ p.label }}</div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ mobile.showResultado }}" hint-placeholder-val="{{ false }}">
+                  <div>
+                    <div style="font-size:12px; color:#8b98a5; margin-bottom:8px; font-weight:600;">RESULTADO</div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                      <sc-for list="{{ mobile.resultadoItems }}" as="r" hint-placeholder-count="2">
+                        <div onClick="{{ r.onClick }}" style="padding:18px 10px; border-radius:12px; text-align:center; font-size:14px; font-weight:600; cursor:pointer; background:{{ r.bg }}; border:1px solid {{ r.border }};">{{ r.label }}</div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ mobile.saved }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; flex-direction:column; align-items:center; gap:10px; padding:20px 0; animation:popIn 260ms ease-out;">
+                <div style="width:52px; height:52px; border-radius:50%; background:rgba(79,142,247,0.18); display:flex; align-items:center; justify-content:center;">
+                  <div style="width:20px; height:12px; border-left:3px solid #4f8ef7; border-bottom:3px solid #4f8ef7; transform:rotate(-45deg) translate(2px,-2px);"></div>
+                </div>
+                <div style="font-size:15px; font-weight:700;">Salvo</div>
+                <div style="font-size:13px; color:#8b98a5; text-align:center;">{{ mobile.savedEntry.summary }}</div>
+                <div onClick="{{ mobile.onNew }}" style="margin-top:6px; padding:12px 24px; background:#4f8ef7; color:#0a0e13; border-radius:10px; font-weight:700; font-size:14px; cursor:pointer;">Novo registro</div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+
+      <div style="width:280px; display:flex; flex-direction:column; gap:10px;">
+        <div style="font-size:12px; font-weight:700; color:#8b98a5; letter-spacing:0.4px;">ÚLTIMOS REGISTROS</div>
+        <sc-if value="{{ hasMobileLog }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <sc-for list="{{ mobileLog }}" as="e" hint-placeholder-count="3">
+              <div style="background:#11161c; border:1px solid #1e2731; border-radius:10px; padding:10px 12px;">
+                <div style="display:flex; justify-content:space-between; font-size:11px; color:#5b6774; margin-bottom:4px;"><span>{{ e.typeLabel }}</span><span>{{ e.time }}</span></div>
+                <div style="font-size:12px; color:#c3ccd4;">{{ e.summary }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ noMobileLog }}" hint-placeholder-val="{{ true }}">
+          <div style="font-size:13px; color:#5b6774;">Nenhum evento registrado ainda.</div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isPc }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:24px 32px; display:flex; flex-direction:column; gap:20px;">
+      <div style="display:flex; gap:20px; align-items:flex-start;">
+        <div style="flex:1; background:#0e1620; border:1px solid #1e2731; border-radius:14px; overflow:hidden;">
+          <div style="height:420px; position:relative; background:linear-gradient(160deg,#0e1620,#161f2b); display:flex; align-items:center; justify-content:center;">
+            <div style="position:absolute; top:16px; left:20px; font-size:13px; font-weight:700; color:#8b98a5;">CÂMERA PRINCIPAL</div>
+            <div onClick="{{ togglePlay }}" style="width:72px; height:72px; border-radius:50%; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); display:flex; align-items:center; justify-content:center; cursor:pointer;">
+              <div style="width:0;height:0; border-left:22px solid #eef2f6; border-top:14px solid transparent; border-bottom:14px solid transparent; margin-left:4px;"></div>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:14px; padding:12px 18px; border-top:1px solid #1e2731;">
+            <div onClick="{{ togglePlay }}" style="font-size:13px; font-weight:700; color:#4f8ef7; cursor:pointer; width:70px;">{{ pcPlayLabel }}</div>
+            <div style="flex:1; height:4px; background:#232d38; border-radius:2px;"><div style="width:38%; height:100%; background:#4f8ef7; border-radius:2px;"></div></div>
+            <div style="font-family:'Barlow Condensed',sans-serif; font-size:15px; font-weight:700; letter-spacing:0.5px; min-width:60px; text-align:right;">{{ pcTimeLabel }}</div>
+          </div>
+        </div>
+        <div style="width:220px; display:flex; flex-direction:column; gap:8px;">
+          <div style="font-size:12px; font-weight:700; color:#8b98a5; margin-bottom:2px;">ATALHOS</div>
+          <sc-for list="{{ pcEventTypes }}" as="et" hint-placeholder-count="5">
+            <div onClick="{{ et.onClick }}" style="display:flex; align-items:center; gap:10px; padding:10px 12px; background:#141a21; border:1px solid #232d38; border-radius:10px; cursor:pointer;">
+              <div style="width:26px; height:26px; border-radius:6px; background:#1b232c; border:1px solid #2b3644; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:#4f8ef7;">{{ et.shortcut }}</div>
+              <div style="font-size:13px; font-weight:600;">{{ et.label }}</div>
+            </div>
+          </sc-for>
+          <div style="display:flex; align-items:center; gap:10px; padding:10px 12px; margin-top:2px; color:#5b6774; font-size:12px;">
+            <div style="width:26px; height:26px; border-radius:6px; background:#141a21; border:1px solid #232d38; display:flex; align-items:center; justify-content:center; font-size:12px;">␣</div>
+            <div>Play / Pause</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:20px; align-items:flex-start;">
+        <div style="flex:1; background:#0e1620; border:1px solid #1e2731; border-radius:14px; padding:16px 18px; min-height:120px;">
+          <div style="font-size:12px; font-weight:700; color:#8b98a5; margin-bottom:10px;">REGISTRO DE EVENTO</div>
+
+          <sc-if value="{{ pc.idle }}" hint-placeholder-val="{{ true }}">
+            <div style="font-size:13px; color:#5b6774;">Pressione uma tecla de atalho ou clique em um evento à direita.</div>
+          </sc-if>
+
+          <sc-if value="{{ pc.flowActive }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <div onClick="{{ pc.onBack }}" style="font-size:12px; color:#8b98a5; cursor:pointer;">‹ Voltar (Esc)</div>
+                <div style="font-size:13px; font-weight:700;">{{ pc.eventTypeLabel }}</div>
+                <div style="font-size:12px; color:#5b6774;">{{ pc.stepDisplay }}</div>
+              </div>
+
+              <sc-if value="{{ pc.showZone }}" hint-placeholder-val="{{ false }}">
+                <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:6px; max-width:340px;">
+                  <sc-for list="{{ pc.zoneItems }}" as="z" hint-placeholder-count="9">
+                    <div onClick="{{ z.onClick }}" style="padding:10px 6px; text-align:center; font-size:10px; font-weight:600; border-radius:6px; cursor:pointer; background:{{ z.bg }}; border:1px solid {{ z.border }};">{{ z.label }}</div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{ pc.showDetail }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                  <sc-for list="{{ pc.detailItems }}" as="d" hint-placeholder-count="4">
+                    <div onClick="{{ d.onClick }}" style="padding:10px 16px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; background:{{ d.bg }}; border:1px solid {{ d.border }};">{{ d.label }}</div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{ pc.showAssist }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                  <sc-for list="{{ pc.assistItems }}" as="p" hint-placeholder-count="8">
+                    <div onClick="{{ p.onClick }}" style="padding:8px 14px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; background:{{ p.bg }}; border:1px solid {{ p.border }};">{{ p.label }}</div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{ pc.showCardColor }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex; gap:10px;">
+                  <sc-for list="{{ pc.cardColorItems }}" as="c" hint-placeholder-count="2">
+                    <div onClick="{{ c.onClick }}" style="display:flex; align-items:center; gap:8px; padding:10px 16px; border-radius:8px; cursor:pointer; background:{{ c.bg }}; border:1px solid {{ c.border }};">
+                      <div style="width:12px; height:16px; border-radius:2px; background:{{ c.dot }};"></div>
+                      <div style="font-size:13px; font-weight:600;">{{ c.label }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{ pc.showPlayer }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                  <sc-for list="{{ pc.playerItems }}" as="p" hint-placeholder-count="10">
+                    <div onClick="{{ p.onClick }}" style="padding:8px 14px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; background:{{ p.bg }}; border:1px solid {{ p.border }};">{{ p.label }}</div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{ pc.showResultado }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex; gap:10px;">
+                  <sc-for list="{{ pc.resultadoItems }}" as="r" hint-placeholder-count="2">
+                    <div onClick="{{ r.onClick }}" style="padding:10px 16px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; background:{{ r.bg }}; border:1px solid {{ r.border }};">{{ r.label }}</div>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ pc.saved }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; align-items:center; gap:12px; animation:popIn 220ms ease-out;">
+              <div style="width:36px; height:36px; border-radius:50%; background:rgba(79,142,247,0.18); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <div style="width:14px; height:9px; border-left:2px solid #4f8ef7; border-bottom:2px solid #4f8ef7; transform:rotate(-45deg) translate(1px,-1px);"></div>
+              </div>
+              <div style="flex:1;">
+                <div style="font-size:13px; font-weight:700;">Salvo — {{ pc.savedEntry.summary }}</div>
+              </div>
+              <div onClick="{{ pc.onNew }}" style="padding:8px 16px; background:#4f8ef7; color:#0a0e13; border-radius:8px; font-weight:700; font-size:12px; cursor:pointer;">Novo</div>
+            </div>
+          </sc-if>
+        </div>
+
+        <div style="width:360px; background:#0e1620; border:1px solid #1e2731; border-radius:14px; padding:16px 18px; max-height:360px; overflow-y:auto;">
+          <div style="font-size:12px; font-weight:700; color:#8b98a5; margin-bottom:10px;">LOG DA PARTIDA</div>
+          <sc-if value="{{ hasPcLog }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <sc-for list="{{ pcLog }}" as="e" hint-placeholder-count="5">
+                <div style="display:grid; grid-template-columns:44px 40px 1fr; gap:8px; align-items:center; padding:8px 0; border-bottom:1px solid #1a222b; font-size:12px;">
+                  <div style="color:#5b6774; font-family:'Barlow Condensed',sans-serif; font-weight:700;">{{ e.time }}</div>
+                  <div style="color:#4f8ef7; font-weight:700;">{{ e.typeMono }}</div>
+                  <div style="color:#c3ccd4;">{{ e.summary }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ noPcLog }}" hint-placeholder-val="{{ true }}">
+            <div style="font-size:13px; color:#5b6774;">Nenhum evento registrado ainda.</div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isDash }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:28px 32px; display:flex; flex-direction:column; gap:24px; max-width:1280px; margin:0 auto;">
+      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:16px;">
+        <sc-for list="{{ goalOrigin }}" as="g" hint-placeholder-count="4">
+          <div style="background:#11161c; border:1px solid #1e2731; border-radius:14px; padding:18px;">
+            <div style="font-size:12px; color:#8b98a5; font-weight:600; margin-bottom:6px;">{{ g.label }}</div>
+            <div style="display:flex; align-items:baseline; gap:8px;">
+              <div style="font-family:'Barlow Condensed',sans-serif; font-size:32px; font-weight:800;">{{ g.pct }}%</div>
+              <div style="font-size:12px; color:#5b6774;">{{ g.count }} gols</div>
+            </div>
+            <div style="height:5px; background:#1e2731; border-radius:3px; margin-top:10px;">
+              <div style="height:100%; border-radius:3px; background:#4f8ef7; width:{{ g.pct }}%;"></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1.6fr 1fr; gap:20px;">
+        <div style="background:#11161c; border:1px solid #1e2731; border-radius:14px; padding:20px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+            <div>
+              <div style="font-size:13px; font-weight:700;">Evolução individual</div>
+              <div style="font-size:12px; color:#5b6774; margin-top:2px;">{{ totalGoalsSel }} gols {{ selLabel }}</div>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <select value="{{ dashPlayer }}" onChange="{{ onDashPlayerChange }}" style="background:#1b232c; color:#eef2f6; border:1px solid #2b3644; border-radius:8px; padding:8px 10px; font-size:12px; font-weight:600;">
+                <sc-for list="{{ dashPlayers }}" as="p" hint-placeholder-count="12">
+                  <option value="{{ p }}">{{ p }}</option>
+                </sc-for>
+              </select>
+              <select value="{{ dashMatch }}" onChange="{{ onDashMatchChange }}" style="background:#1b232c; color:#eef2f6; border:1px solid #2b3644; border-radius:8px; padding:8px 10px; font-size:12px; font-weight:600;">
+                <option value="all">Todas as partidas</option>
+                <sc-for list="{{ matchOptionsList }}" as="m" hint-placeholder-count="8">
+                  <option value="{{ m.idx }}">{{ m.label }}</option>
+                </sc-for>
+              </select>
+            </div>
+          </div>
+          <svg viewBox="0 0 560 200" style="width:100%; height:200px; overflow:visible;">
+            <path d="{{ chartPath }}" fill="none" stroke="#4f8ef7" stroke-width="2.5"></path>
+            <sc-for list="{{ chartPoints }}" as="pt" hint-placeholder-count="8">
+              <circle cx="{{ pt.x }}" cy="{{ pt.y }}" r="{{ pt.r }}" fill="{{ pt.fill }}"></circle>
+            </sc-for>
+          </svg>
+        </div>
+
+        <div style="background:#11161c; border:1px solid #1e2731; border-radius:14px; padding:20px;">
+          <div style="font-size:13px; font-weight:700; margin-bottom:4px;">Zona de finalização</div>
+          <div style="font-size:12px; color:#5b6774; margin-bottom:14px;">Gols por setor do campo, temporada</div>
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:6px;">
+            <sc-for list="{{ heatCells }}" as="h" hint-placeholder-count="9">
+              <div style="aspect-ratio:1; border-radius:8px; display:flex; align-items:center; justify-content:center; background:{{ h.bg }};">
+                <div style="font-family:'Barlow Condensed',sans-serif; font-size:20px; font-weight:800; color:#fff;">{{ h.value }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; margin-top:14px;">
+            <div style="font-size:11px; color:#5b6774;">Menos</div>
+            <div style="flex:1; height:6px; border-radius:3px; background:linear-gradient(90deg,#17324a,#2f6fd6,#f5a623);"></div>
+            <div style="font-size:11px; color:#5b6774;">Mais</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    activeScreen: 'mobile',
+    mobile: { eventType: null, stepIndex: 0, data: {} },
+    pc: { eventType: null, stepIndex: 0, data: {} },
+    mobileLog: [],
+    pcLog: [],
+    pcPlaying: false,
+    pcSeconds: 0,
+    dashPlayer: 'Lucas Silva',
+    dashMatch: 'all',
+  };
+
+  squad = ['Lucas Silva','Rafael Souza','Bruno Costa','Diego Martins','Thiago Alves','Gabriel Rocha','Matheus Lima','Eduardo Pinto','Felipe Santos','Rodrigo Nunes','André Melo','Caio Ferreira'];
+  fieldPlayers = this.squad.slice(0, 7).concat([{ key: 'none-marker' }]).slice(0, 0) || [];
+  matches = ['R1 · vs Falcões','R2 · vs Titans','R3 · vs Leões FC','R4 · vs Furacão','R5 · vs Atlético Vale','R6 · vs Unidos SC','R7 · vs Estrela Azul','R8 · vs Norte FC'];
+  zoneLabels = ['Esquerda afastada','Centro afastado','Direita afastada','Esquerda meia-lua','Centro meia-lua','Direita meia-lua','Esquerda pequena área','Centro pequena área','Direita pequena área'];
+  detailOptions = [{ key: 'pe-direito', label: 'Pé direito' },{ key: 'pe-esquerdo', label: 'Pé esquerdo' },{ key: 'cabeca', label: 'Cabeça' },{ key: 'bola-parada', label: 'Bola parada' }];
+  cardColors = [{ key: 'amarelo', label: 'Cartão amarelo' },{ key: 'vermelho', label: 'Cartão vermelho' }];
+  resultadoOptions = [{ key: 'certo', label: 'Certo' },{ key: 'errado', label: 'Errado' }];
+  eventTypesMeta = [
+    { key: 'gol', label: 'Gol', mono: 'GOL', shortcut: 'G' },
+    { key: 'cartao', label: 'Cartão', mono: 'CA', shortcut: 'C' },
+    { key: 'passe', label: 'Passe', mono: 'PA', shortcut: 'P' },
+    { key: 'cruzamento', label: 'Cruzamento', mono: 'CR', shortcut: 'X' },
+    { key: 'lancamento', label: 'Lançamento', mono: 'LA', shortcut: 'L' },
+  ];
+  stepSeq = { gol: ['zone','detail','assist'], cartao: ['cardColor','player'], passe: ['player','resultado'], cruzamento: ['player','resultado'], lancamento: ['player','resultado'] };
+  goalOrigin = [{ label: 'Contra-ataque', pct: 34, count: 19 },{ label: 'Bola parada', pct: 22, count: 12 },{ label: 'Transição', pct: 18, count: 10 },{ label: 'Jogo organizado', pct: 26, count: 15 }];
+  heatmapValues = [3, 8, 4, 2, 15, 3, 5, 12, 2];
+
+  componentDidMount() {
+    this.fieldPlayers = this.squad.slice(0, 7);
+    this.playerGoalsByMatch = {};
+    this.squad.forEach((p, idx) => {
+      let seed = (idx + 1) * 9301 + 49297;
+      const arr = [];
+      for (let i = 0; i < 8; i++) {
+        seed = (seed * 233280 + idx * 17 + i * 31) % 1000;
+        const v = Math.abs(seed) % 1000 / 1000;
+        arr.push(Math.floor(v * 3.2));
+      }
+      this.playerGoalsByMatch[p] = arr;
+    });
+    this._handleKey = this.handleKey.bind(this);
+    window.addEventListener('keydown', this._handleKey);
+    this._timer = setInterval(() => { if (this.state.pcPlaying) this.setState(p => ({ pcSeconds: p.pcSeconds + 1 })); }, 1000);
+    this.forceUpdate();
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('keydown', this._handleKey);
+    clearInterval(this._timer);
+  }
+
+  handleKey(e) {
+    if (this.state.activeScreen !== 'pc') return;
+    const tag = (e.target && e.target.tagName) || '';
+    if (tag === 'SELECT' || tag === 'INPUT' || tag === 'TEXTAREA') return;
+    const k = e.key.toLowerCase();
+    if (k === ' ') { e.preventDefault(); this.setState(p => ({ pcPlaying: !p.pcPlaying })); return; }
+    if (k === 'escape') { this.goBack('pc'); return; }
+    const map = { g: 'gol', c: 'cartao', p: 'passe', x: 'cruzamento', l: 'lancamento' };
+    if (map[k] && !this.state.pc.eventType) { this.setState({ pc: { eventType: map[k], stepIndex: 0, data: {} } }); }
+  }
+
+  formatTime(sec) { const m = Math.floor(sec / 60); const s = sec % 60; return m + ':' + String(s).padStart(2, '0'); }
+
+  labelFor(list, key) { const f = list.find(o => o.key === key); return f ? f.label : ''; }
+
+  buildSummary(eventType, data) {
+    if (eventType === 'gol') {
+      const zone = this.zoneLabels[data.zone] || '';
+      const det = this.labelFor(this.detailOptions, data.detail);
+      const assist = data.assist && data.assist !== 'none' ? (' · Assist.: ' + data.assist) : ' · Sem assistência';
+      return zone + ' · ' + det + assist;
+    }
+    if (eventType === 'cartao') return this.labelFor(this.cardColors, data.cardColor) + ' · ' + data.player;
+    return data.player + ' · ' + this.labelFor(this.resultadoOptions, data.resultado);
+  }
+
+  selectStepValue(branch, stepName, value) {
+    const b = this.state[branch];
+    const data = { ...b.data, [stepName]: value };
+    const seq = this.stepSeq[b.eventType];
+    const idx = seq.indexOf(stepName);
+    if (idx === seq.length - 1) { this.saveEntry(branch, { ...b, data }); return; }
+    this.setState({ [branch]: { ...b, data, stepIndex: idx + 1 } });
+  }
+
+  saveEntry(branch, b) {
+    const meta = this.eventTypesMeta.find(m => m.key === b.eventType);
+    const time = branch === 'pc' ? this.formatTime(this.state.pcSeconds) : new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const entry = { id: Date.now() + '-' + Math.random(), typeLabel: meta.label, typeMono: meta.mono, summary: this.buildSummary(b.eventType, b.data), time };
+    const logKey = branch + 'Log';
+    this.setState(prev => ({
+      [logKey]: [entry, ...prev[logKey]].slice(0, 20),
+      [branch]: { eventType: b.eventType, stepIndex: 'saved', data: b.data, savedEntry: entry },
+    }));
+  }
+
+  goBack(branch) {
+    const b = this.state[branch];
+    if (!b.eventType) return;
+    if (b.stepIndex === 'saved' || b.stepIndex === 0) { this.setState({ [branch]: { eventType: null, stepIndex: 0, data: {} } }); return; }
+    this.setState({ [branch]: { ...b, stepIndex: b.stepIndex - 1 } });
+  }
+
+  newEntry(branch) { this.setState({ [branch]: { eventType: null, stepIndex: 0, data: {} } }); }
+
+  heatColor(v) {
+    const max = Math.max(...this.heatmapValues);
+    const t = v / max;
+    const c1 = [23,50,74], c2 = [47,111,214], c3 = [245,166,35];
+    let r, g, b;
+    if (t < 0.5) { const k = t / 0.5; r = c1[0] + (c2[0]-c1[0])*k; g = c1[1] + (c2[1]-c1[1])*k; b = c1[2] + (c2[2]-c1[2])*k; }
+    else { const k = (t-0.5)/0.5; r = c2[0] + (c3[0]-c2[0])*k; g = c2[1] + (c3[1]-c2[1])*k; b = c2[2] + (c3[2]-c2[2])*k; }
+    return 'rgb(' + Math.round(r) + ',' + Math.round(g) + ',' + Math.round(b) + ')';
+  }
+
+  mkFlow(branch) {
+    const b = this.state[branch];
+    const active = !!b.eventType;
+    const saved = b.stepIndex === 'saved';
+    const idle = !active;
+    const flowActive = active && !saved;
+    const seq = active ? this.stepSeq[b.eventType] : [];
+    const currentStep = flowActive ? seq[b.stepIndex] : null;
+    const sel = (cond, onColor, offColor) => cond ? onColor : offColor;
+
+    const zoneItems = this.zoneLabels.map((label, i) => ({ key: 'z' + i, label, bg: sel(b.data.zone === i, 'rgba(79,142,247,0.22)', '#1b232c'), border: sel(b.data.zone === i, '#4f8ef7', '#26313d'), onClick: () => this.selectStepValue(branch, 'zone', i) }));
+    const detailItems = this.detailOptions.map(d => ({ ...d, bg: sel(b.data.detail === d.key, 'rgba(79,142,247,0.22)', '#1b232c'), border: sel(b.data.detail === d.key, '#4f8ef7', '#26313d'), onClick: () => this.selectStepValue(branch, 'detail', d.key) }));
+    const assistItems = (this.fieldPlayers && this.fieldPlayers.length ? this.fieldPlayers : this.squad.slice(0,7)).map(p => ({ key: p, label: p, bg: sel(b.data.assist === p, 'rgba(79,142,247,0.22)', '#1b232c'), border: sel(b.data.assist === p, '#4f8ef7', '#26313d'), onClick: () => this.selectStepValue(branch, 'assist', p) })).concat([{ key: 'none', label: 'Sem assistência', bg: sel(b.data.assist === 'none', 'rgba(245,166,35,0.18)', '#1b232c'), border: sel(b.data.assist === 'none', '#f5a623', '#26313d'), onClick: () => this.selectStepValue(branch, 'assist', 'none') }]);
+    const cardColorItems = this.cardColors.map(c => ({ ...c, dot: c.key === 'amarelo' ? '#f2c94c' : '#e15554', bg: sel(b.data.cardColor === c.key, 'rgba(79,142,247,0.22)', '#1b232c'), border: sel(b.data.cardColor === c.key, '#4f8ef7', '#26313d'), onClick: () => this.selectStepValue(branch, 'cardColor', c.key) }));
+    const playerItems = this.squad.map(p => ({ key: p, label: p, bg: sel(b.data.player === p, 'rgba(79,142,247,0.22)', '#1b232c'), border: sel(b.data.player === p, '#4f8ef7', '#26313d'), onClick: () => this.selectStepValue(branch, 'player', p) }));
+    const resultadoItems = this.resultadoOptions.map(r => ({ ...r, bg: sel(b.data.resultado === r.key, r.key === 'certo' ? 'rgba(79,142,247,0.22)' : 'rgba(245,166,35,0.18)', '#1b232c'), border: sel(b.data.resultado === r.key, r.key === 'certo' ? '#4f8ef7' : '#f5a623', '#26313d'), onClick: () => this.selectStepValue(branch, 'resultado', r.key) }));
+    const meta = active ? this.eventTypesMeta.find(m => m.key === b.eventType) : null;
+
+    return {
+      idle, active, saved, flowActive,
+      eventTypeLabel: meta ? meta.label : '',
+      stepDisplay: flowActive ? (seq.indexOf(currentStep) + 1) + ' / ' + seq.length : '',
+      showZone: currentStep === 'zone', zoneItems,
+      showDetail: currentStep === 'detail', detailItems,
+      showAssist: currentStep === 'assist', assistItems,
+      showCardColor: currentStep === 'cardColor', cardColorItems,
+      showPlayer: currentStep === 'player', playerItems,
+      showResultado: currentStep === 'resultado', resultadoItems,
+      savedEntry: b.savedEntry || { summary: '' },
+      onBack: () => this.goBack(branch),
+      onNew: () => this.newEntry(branch),
+    };
+  }
+
+  renderVals() {
+    const s = this.state;
+    const tabs = [{ key: 'mobile', label: 'Registro Mobile' },{ key: 'pc', label: 'Registro PC' },{ key: 'dashboard', label: 'Dashboard' }].map(t => ({ ...t, color: s.activeScreen === t.key ? '#eef2f6' : '#8b98a5', borderColor: s.activeScreen === t.key ? '#4f8ef7' : 'transparent', onClick: () => this.setState({ activeScreen: t.key }) }));
+    const eventTypeItems = branch => this.eventTypesMeta.map(m => ({ ...m, onClick: () => this.setState({ [branch]: { eventType: m.key, stepIndex: 0, data: {} } }) }));
+    const heatCells = this.heatmapValues.map((v, i) => ({ value: v, label: this.zoneLabels[i], bg: this.heatColor(v) }));
+
+    const goalsByMatch = (this.playerGoalsByMatch && this.playerGoalsByMatch[s.dashPlayer]) || [0,0,0,0,0,0,0,0];
+    const W = 560, H = 200, padX = 34, padY = 22, maxVal = 4, n = goalsByMatch.length;
+    const pts = goalsByMatch.map((v, i) => {
+      const highlighted = s.dashMatch !== 'all' && Number(s.dashMatch) === i;
+      return { x: padX + i * (W - 2*padX) / (n - 1), y: H - padY - (v / maxVal) * (H - 2*padY), highlighted, r: highlighted ? 6 : 4, fill: highlighted ? '#f5a623' : '#4f8ef7' };
+    });
+    const chartPath = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' ');
+    const totalGoalsSel = s.dashMatch === 'all' ? goalsByMatch.reduce((a, c) => a + c, 0) : (goalsByMatch[Number(s.dashMatch)] || 0);
+    const selLabel = s.dashMatch === 'all' ? 'na temporada' : ('em ' + this.matches[Number(s.dashMatch)]);
+    const matchOptionsList = this.matches.map((label, i) => ({ idx: i, label }));
+
+    return {
+      isMobile: s.activeScreen === 'mobile', isPc: s.activeScreen === 'pc', isDash: s.activeScreen === 'dashboard',
+      tabs,
+      mobileEventTypes: eventTypeItems('mobile'),
+      pcEventTypes: eventTypeItems('pc'),
+      mobile: this.mkFlow('mobile'),
+      pc: this.mkFlow('pc'),
+      mobileLog: s.mobileLog, hasMobileLog: s.mobileLog.length > 0, noMobileLog: s.mobileLog.length === 0,
+      pcLog: s.pcLog, hasPcLog: s.pcLog.length > 0, noPcLog: s.pcLog.length === 0,
+      pcPlayLabel: s.pcPlaying ? 'Pausar' : 'Reproduzir',
+      pcTimeLabel: this.formatTime(s.pcSeconds),
+      togglePlay: () => this.setState(p => ({ pcPlaying: !p.pcPlaying })),
+      dashPlayers: this.squad,
+      dashPlayer: s.dashPlayer,
+      onDashPlayerChange: e => this.setState({ dashPlayer: e.target.value }),
+      dashMatch: s.dashMatch,
+      onDashMatchChange: e => this.setState({ dashMatch: e.target.value }),
+      matchOptionsList,
+      goalOrigin: this.goalOrigin,
+      heatCells,
+      chartPath, chartPoints: pts,
+      totalGoalsSel, selLabel,
+    };
+  }
+}
+
+</script>
+</body>
+</html>
