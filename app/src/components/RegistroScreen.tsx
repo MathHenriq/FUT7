@@ -1,0 +1,277 @@
+import { useCallback, useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { colors, fontDisplay } from '../colors';
+import { buildSummary, eventTypesMeta, formatClock, formatMinuto, stepSeq, stepTitles } from '../data';
+import { useEventOptions } from '../hooks/useEventOptions';
+import { useApp } from '../store';
+import { StepCardColor, StepGrid, StepList, StepZone } from './OptionPickers';
+import type { EventTypeKey, EventoRegistrado, FlowData, FlowState, StepName } from '../types';
+
+const emptyFlow: FlowState = { eventType: null, stepIndex: 0, data: {} };
+
+export default function RegistroScreen() {
+  const { sessaoId } = useParams();
+  const navigate = useNavigate();
+  const { state, dispatch, saveEvento, updateEvento, deleteEvento } = useApp();
+  const sessao = state.sessoes.find((s) => s.id === sessaoId);
+
+  useEffect(() => {
+    if (sessaoId) dispatch({ type: 'SET_CURRENT_SESSAO', id: sessaoId });
+  }, [sessaoId, dispatch]);
+
+  const [flow, setFlow] = useState<FlowState>(emptyFlow);
+  const [videoSeconds, setVideoSeconds] = useState(0);
+  const [videoPlaying, setVideoPlaying] = useState(false);
+  const [minutoDraft, setMinutoDraft] = useState('1');
+
+  useEffect(() => {
+    if (!videoPlaying) return;
+    const id = setInterval(() => setVideoSeconds((s) => s + 1), 1000);
+    return () => clearInterval(id);
+  }, [videoPlaying]);
+
+  const select = useCallback((step: StepName, value: string | number) => {
+    const data: FlowData = { ...flow.data, [step]: value };
+    const seq = stepSeq[flow.eventType as EventTypeKey];
+    const idx = seq.indexOf(step);
+    if (idx === seq.length - 1) {
+      // Side effect (dispatch) must happen outside setFlow's updater, never inside it —
+      // React may invoke updater functions during render to check purity (esp. under StrictMode).
+      if (flow.editingId) updateEvento(flow.editingId, flow.eventType as EventTypeKey, flow.minuto ?? 0, data);
+      else saveEvento(sessaoId as string, flow.eventType as EventTypeKey, flow.minuto ?? 0, data);
+      setFlow({ ...flow, data, stepIndex: 'saved' });
+      return;
+    }
+    setFlow({ ...flow, data, stepIndex: idx + 1 });
+  }, [flow, saveEvento, updateEvento, sessaoId]);
+
+  const options = useEventOptions(flow.data, select);
+
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement)?.tagName || '';
+      if (tag === 'SELECT' || tag === 'INPUT' || tag === 'TEXTAREA') return;
+      const k = e.key.toLowerCase();
+      if (k === ' ' && sessao?.comVideo) { e.preventDefault(); setVideoPlaying((p) => !p); return; }
+      if (k === 'escape') { goBack(); return; }
+      const map: Record<string, EventTypeKey> = { g: 'gol', c: 'cartao', p: 'passe', x: 'cruzamento', l: 'lancamento' };
+      if (map[k] && !flow.eventType) startType(map[k]);
+    }
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flow.eventType, sessao?.comVideo]);
+
+  if (!sessao) {
+    return (
+      <div style={{ padding: 32 }}>
+        <div style={{ fontSize: 14, color: colors.muted }}>Sessão não encontrada.</div>
+        <div onClick={() => navigate('/sessoes')} style={{ marginTop: 12, color: colors.blue, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>‹ Voltar para Sessões</div>
+      </div>
+    );
+  }
+
+  function startType(key: EventTypeKey) {
+    if (sessao!.comVideo) {
+      setFlow({ eventType: key, stepIndex: 0, data: {}, minuto: Math.floor(videoSeconds / 60) });
+    } else {
+      setMinutoDraft('1');
+      setFlow({ eventType: key, stepIndex: 'minuto', data: {} });
+    }
+  }
+
+  function confirmMinuto() {
+    const m = Math.max(0, Math.min(120, Number(minutoDraft) || 0));
+    setFlow((f) => ({ ...f, stepIndex: 0, minuto: m }));
+  }
+
+  function goBack() {
+    if (!flow.eventType) return;
+    if (flow.stepIndex === 'saved' || flow.stepIndex === 'minuto') { setFlow(emptyFlow); return; }
+    if (flow.stepIndex === 0) {
+      if (!sessao!.comVideo && !flow.editingId) { setFlow((f) => ({ ...f, stepIndex: 'minuto' })); return; }
+      setFlow(emptyFlow);
+      return;
+    }
+    setFlow((f) => ({ ...f, stepIndex: (f.stepIndex as number) - 1 }));
+  }
+
+  function startEdit(evento: EventoRegistrado) {
+    setFlow({ eventType: evento.tipo, stepIndex: 0, data: evento.data, minuto: evento.minuto, editingId: evento.id });
+    setMinutoDraft(String(evento.minuto));
+  }
+
+  function removeEvento(id: string) {
+    if (window.confirm('Excluir este evento registrado?')) deleteEvento(id);
+  }
+
+  const seq = flow.eventType ? stepSeq[flow.eventType] : [];
+  const currentStep: StepName | null = flow.stepIndex !== 'saved' && flow.stepIndex !== 'minuto' && flow.eventType
+    ? seq[flow.stepIndex as number] : null;
+  const meta = flow.eventType ? eventTypesMeta.find((m) => m.key === flow.eventType) : null;
+  const eventos = state.eventos
+    .filter((e) => e.sessaoId === sessao.id)
+    .sort((a, b) => b.criadoEm - a.criadoEm);
+
+  return (
+    <div className="registro-page">
+      <div onClick={() => navigate('/sessoes')} style={{ fontSize: 12, color: colors.muted, cursor: 'pointer' }}>‹ Sessões</div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+        <div style={{ fontSize: 16, fontWeight: 700 }}>{sessao.label}</div>
+        <div style={{ fontSize: 12, color: colors.mutedDark }}>
+          {sessao.tipoSessao === 'partida' ? 'Partida' : 'Treino'} · {sessao.data}{!sessao.comVideo ? ' · registro retroativo' : ''}
+        </div>
+      </div>
+
+      <div className="registro-top">
+        {sessao.comVideo && (
+          <div className="registro-video-col">
+            <div className="registro-video">
+              <div style={{ position: 'absolute', top: 16, left: 20, fontSize: 13, fontWeight: 700, color: colors.muted }}>CÂMERA PRINCIPAL</div>
+              <div onClick={() => setVideoPlaying((p) => !p)} style={{
+                width: 64, height: 64, borderRadius: '50%', background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+              }}>
+                <div style={{ width: 0, height: 0, borderLeft: '20px solid #eef2f6', borderTop: '13px solid transparent', borderBottom: '13px solid transparent', marginLeft: 4 }} />
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 18px', borderTop: `1px solid ${colors.border}` }}>
+              <div onClick={() => setVideoPlaying((p) => !p)} style={{ fontSize: 13, fontWeight: 700, color: colors.blue, cursor: 'pointer', width: 70 }}>
+                {videoPlaying ? 'Pausar' : 'Reproduzir'}
+              </div>
+              <div style={{ flex: 1, height: 4, background: colors.borderAlt, borderRadius: 2 }}>
+                <div style={{ width: `${Math.min(100, (videoSeconds / 600) * 100)}%`, height: '100%', background: colors.blue, borderRadius: 2 }} />
+              </div>
+              <div style={{ fontFamily: fontDisplay, fontSize: 15, fontWeight: 700, letterSpacing: 0.5, minWidth: 60, textAlign: 'right' }}>
+                {formatClock(videoSeconds)}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="registro-shortcuts">
+          <div style={{ fontSize: 12, fontWeight: 700, color: colors.muted, marginBottom: 2 }}>ATALHOS</div>
+          {eventTypesMeta.map((et) => (
+            <div key={et.key} onClick={() => startType(et.key)} style={{
+              display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: colors.cardBgDense,
+              border: `1px solid ${colors.borderAlt}`, borderRadius: 10, cursor: 'pointer',
+            }}>
+              <div style={{
+                width: 26, height: 26, borderRadius: 6, background: colors.chipBg, border: `1px solid ${colors.borderStrong}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: colors.blue,
+              }}>{et.shortcut}</div>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>{et.label}</div>
+            </div>
+          ))}
+          {sessao.comVideo && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', marginTop: 2, color: colors.mutedDark, fontSize: 12 }}>
+              <div style={{ width: 26, height: 26, borderRadius: 6, background: colors.cardBgDense, border: `1px solid ${colors.borderAlt}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>␣</div>
+              <div>Play / Pause</div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="registro-main">
+        <div className="registro-capture">
+          <div className="registro-grabber" />
+
+          {!flow.eventType && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+              {eventTypesMeta.map((et) => (
+                <div key={et.key} onClick={() => startType(et.key)} style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '16px 8px',
+                  background: colors.chipBg, border: `1px solid ${colors.chipBorder}`, borderRadius: 14, cursor: 'pointer',
+                  minHeight: 88, justifyContent: 'center',
+                }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 8, background: colors.blueSoft, color: colors.blue, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800 }}>{et.mono}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: colors.text }}>{et.label}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {flow.eventType && flow.stepIndex === 'minuto' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div onClick={goBack} style={{ fontSize: 13, color: colors.muted, cursor: 'pointer' }}>‹ Voltar</div>
+                <div style={{ fontSize: 13, fontWeight: 700 }}>{meta?.label}</div>
+                <div />
+              </div>
+              <div style={{ fontSize: 12, color: colors.muted, fontWeight: 600 }}>MINUTO DO EVENTO</div>
+              <input
+                type="number"
+                className="minuto-input"
+                value={minutoDraft}
+                min={0}
+                max={120}
+                autoFocus
+                onChange={(e) => setMinutoDraft(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') confirmMinuto(); }}
+              />
+              <div onClick={confirmMinuto} style={{ padding: '12px 24px', background: colors.blue, color: '#0a0e13', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer', textAlign: 'center' }}>
+                Confirmar
+              </div>
+            </div>
+          )}
+
+          {flow.eventType && currentStep && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div onClick={goBack} style={{ fontSize: 13, color: colors.muted, cursor: 'pointer' }}>‹ Voltar</div>
+                <div style={{ fontSize: 13, fontWeight: 700 }}>{meta?.label}{flow.minuto !== undefined ? ` · ${formatMinuto(flow.minuto)}` : ''}{flow.editingId ? ' (editando)' : ''}</div>
+                <div style={{ fontSize: 12, color: colors.mutedDark }}>{seq.indexOf(currentStep) + 1} / {seq.length}</div>
+              </div>
+              <div style={{ fontSize: 12, color: colors.muted, marginBottom: -6, fontWeight: 600 }}>{stepTitles[currentStep]}</div>
+              {currentStep === 'zone' && <StepZone items={options.zoneItems} />}
+              {currentStep === 'detail' && <StepGrid items={options.detailItems} />}
+              {currentStep === 'origin' && <StepGrid items={options.originItems} />}
+              {currentStep === 'scorer' && <StepList items={options.scorerItems} />}
+              {currentStep === 'assist' && <StepList items={options.assistItems} />}
+              {currentStep === 'cardColor' && <StepCardColor items={options.cardColorItems} />}
+              {currentStep === 'player' && <StepList items={options.playerItems} />}
+              {currentStep === 'resultado' && <StepGrid items={options.resultadoItems} />}
+            </div>
+          )}
+
+          {flow.eventType && flow.stepIndex === 'saved' && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '10px 0', animation: 'popIn 220ms ease-out' }}>
+              <div style={{ width: 44, height: 44, borderRadius: '50%', background: colors.blueSoft, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: 18, height: 10, borderLeft: `3px solid ${colors.blue}`, borderBottom: `3px solid ${colors.blue}`, transform: 'rotate(-45deg) translate(2px,-2px)' }} />
+              </div>
+              <div style={{ fontSize: 15, fontWeight: 700 }}>{flow.editingId ? 'Alterações salvas' : 'Salvo'}</div>
+              <div style={{ fontSize: 13, color: colors.muted, textAlign: 'center' }}>
+                {flow.minuto !== undefined ? `${formatMinuto(flow.minuto)} · ` : ''}{buildSummary(flow.eventType, flow.data)}
+              </div>
+              <div onClick={() => setFlow(emptyFlow)} style={{ marginTop: 4, padding: '12px 24px', background: colors.blue, color: '#0a0e13', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+                Novo registro
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="registro-log">
+          <div style={{ fontSize: 12, fontWeight: 700, color: colors.muted, letterSpacing: 0.4, marginBottom: 10 }}>EVENTOS DA SESSÃO</div>
+          {eventos.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {eventos.map((e) => (
+                <div key={e.id} style={{ background: colors.cardBg, border: `1px solid ${colors.logBorder}`, borderRadius: 10, padding: '10px 12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: colors.mutedDark, marginBottom: 4 }}>
+                    <span>{eventTypesMeta.find((m) => m.key === e.tipo)?.label} · {formatMinuto(e.minuto)}</span>
+                    <span style={{ display: 'flex', gap: 10 }}>
+                      <span onClick={() => startEdit(e)} style={{ cursor: 'pointer', color: colors.blue }}>editar</span>
+                      <span onClick={() => removeEvento(e.id)} style={{ cursor: 'pointer', color: colors.gold }}>excluir</span>
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 12, color: colors.mutedLight }}>{e.summary}</div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ fontSize: 13, color: colors.mutedDark }}>Nenhum evento registrado ainda.</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

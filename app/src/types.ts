@@ -1,6 +1,3 @@
-export type Screen = 'mobile' | 'pc' | 'dashboard';
-export type Branch = 'mobile' | 'pc';
-
 export type EventTypeKey = 'gol' | 'cartao' | 'passe' | 'cruzamento' | 'lancamento';
 
 export interface EventTypeMeta {
@@ -23,32 +20,38 @@ export interface FlowData {
   resultado?: string;
 }
 
-export interface LogEntry {
+export interface KeyLabel {
+  key: string;
+  label: string;
+}
+
+export type TipoSessao = 'partida' | 'treino';
+
+export interface Sessao {
   id: string;
-  typeLabel: string;
-  typeMono: string;
+  tipoSessao: TipoSessao;
+  data: string;
+  label: string;
+  comVideo: boolean;
+  placarNos?: number;
+  placarAdversario?: number;
+  createdAt: number;
+}
+
+export interface EventoRegistrado {
+  id: string;
+  sessaoId: string;
+  tipo: EventTypeKey;
+  minuto: number;
+  data: FlowData;
   summary: string;
-  time: string;
+  criadoEm: number;
 }
 
 export interface FlowState {
   eventType: EventTypeKey | null;
-  stepIndex: number | 'saved';
+  stepIndex: number | 'saved' | 'minuto';
   data: FlowData;
-  savedEntry?: LogEntry;
-}
-
-export interface GoalRecord {
-  id: string;
-  matchIndex: number;
-  zone: number;
-  detail: string;
-  origin: string;
-  scorer: string;
-  assist?: string;
-}
-
-export interface KeyLabel {
-  key: string;
-  label: string;
+  minuto?: number;
+  editingId?: string;
 }

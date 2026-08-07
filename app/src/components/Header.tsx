@@ -1,15 +1,25 @@
+import { useLocation, useNavigate } from 'react-router-dom';
 import { colors, fontDisplay } from '../colors';
 import { useApp } from '../store';
-import type { Screen } from '../types';
-
-const tabs: { key: Screen; label: string }[] = [
-  { key: 'mobile', label: 'Registro Mobile' },
-  { key: 'pc', label: 'Registro PC' },
-  { key: 'dashboard', label: 'Dashboard' },
-];
 
 export default function Header() {
-  const { state, dispatch } = useApp();
+  const { state, createSessao } = useApp();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  function goRegistro() {
+    const current = state.currentSessaoId && state.sessoes.find((s) => s.id === state.currentSessaoId);
+    if (current) { navigate(`/registro/${current.id}`); return; }
+    const today = new Date().toISOString().slice(0, 10);
+    const id = createSessao({ tipoSessao: 'partida', label: 'Sessão ao vivo', comVideo: true, data: today });
+    navigate(`/registro/${id}`);
+  }
+
+  const tabs = [
+    { key: 'sessoes', label: 'Sessões', active: location.pathname.startsWith('/sessoes'), onClick: () => navigate('/sessoes') },
+    { key: 'registro', label: 'Registro', active: location.pathname.startsWith('/registro'), onClick: goRegistro },
+    { key: 'dashboard', label: 'Dashboard', active: location.pathname.startsWith('/dashboard'), onClick: () => navigate('/dashboard') },
+  ];
 
   return (
     <div
@@ -26,22 +36,19 @@ export default function Header() {
         </div>
       </div>
       <div style={{ display: 'flex', gap: 4 }}>
-        {tabs.map((t) => {
-          const isActive = state.activeScreen === t.key;
-          return (
-            <div
-              key={t.key}
-              onClick={() => dispatch({ type: 'SET_SCREEN', screen: t.key })}
-              style={{
-                padding: '10px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                color: isActive ? colors.text : colors.muted,
-                borderBottom: `2px solid ${isActive ? colors.blue : 'transparent'}`,
-              }}
-            >
-              {t.label}
-            </div>
-          );
-        })}
+        {tabs.map((t) => (
+          <div
+            key={t.key}
+            onClick={t.onClick}
+            style={{
+              padding: '10px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              color: t.active ? colors.text : colors.muted,
+              borderBottom: `2px solid ${t.active ? colors.blue : 'transparent'}`,
+            }}
+          >
+            {t.label}
+          </div>
+        ))}
       </div>
     </div>
   );

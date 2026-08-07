@@ -9,7 +9,7 @@ export default function DashboardScreen() {
 
   return (
     <div style={{ padding: '28px 32px', display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 1280, margin: '0 auto' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
         {d.goalOrigin.map((g) => (
           <div key={g.label} style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 14, padding: 18 }}>
             <div style={{ fontSize: 12, color: colors.muted, fontWeight: 600, marginBottom: 6 }}>{g.label}</div>
@@ -40,12 +40,12 @@ export default function DashboardScreen() {
                 {squad.map((p) => <option key={p} value={p}>{p}</option>)}
               </select>
               <select
-                value={state.dashMatch}
-                onChange={(e) => dispatch({ type: 'SET_DASH_MATCH', match: e.target.value })}
+                value={state.dashSessao}
+                onChange={(e) => dispatch({ type: 'SET_DASH_SESSAO', sessaoId: e.target.value })}
                 style={{ background: colors.chipBg, color: colors.text, border: `1px solid ${colors.borderStrong}`, borderRadius: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600 }}
               >
-                <option value="all">Todas as partidas</option>
-                {d.matchOptionsList.map((m) => <option key={m.idx} value={m.idx}>{m.label}</option>)}
+                <option value="all">Todas as sessões</option>
+                {d.sessaoOptionsList.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
               </select>
             </div>
           </div>

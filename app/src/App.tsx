@@ -1,23 +1,30 @@
+import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom';
 import Header from './components/Header';
-import MobileScreen from './components/MobileScreen';
-import PcScreen from './components/PcScreen';
+import SessoesScreen from './components/SessoesScreen';
+import RegistroScreen from './components/RegistroScreen';
 import DashboardScreen from './components/DashboardScreen';
-import { AppProvider, useApp } from './store';
+import { AppProvider } from './store';
 
-function Screens() {
-  const { state } = useApp();
-  if (state.activeScreen === 'mobile') return <MobileScreen />;
-  if (state.activeScreen === 'pc') return <PcScreen />;
-  return <DashboardScreen />;
+function RegistroRoute() {
+  const { sessaoId } = useParams();
+  return <RegistroScreen key={sessaoId} />;
 }
 
 export default function App() {
   return (
     <AppProvider>
-      <div style={{ minHeight: '100vh', width: '100%', background: '#05070a', color: '#eef2f6' }}>
-        <Header />
-        <Screens />
-      </div>
+      <BrowserRouter>
+        <div style={{ minHeight: '100vh', width: '100%', background: '#05070a', color: '#eef2f6' }}>
+          <Header />
+          <Routes>
+            <Route path="/" element={<Navigate to="/sessoes" replace />} />
+            <Route path="/sessoes" element={<SessoesScreen />} />
+            <Route path="/registro/:sessaoId" element={<RegistroRoute />} />
+            <Route path="/dashboard" element={<DashboardScreen />} />
+            <Route path="*" element={<Navigate to="/sessoes" replace />} />
+          </Routes>
+        </div>
+      </BrowserRouter>
     </AppProvider>
   );
 }

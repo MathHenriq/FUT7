@@ -1,4 +1,4 @@
-import type { EventTypeMeta, GoalRecord, KeyLabel, StepName, EventTypeKey } from './types';
+import type { EventTypeKey, EventTypeMeta, EventoRegistrado, FlowData, KeyLabel, Sessao, StepName, TipoSessao } from './types';
 
 export const squad = [
   'Lucas Silva', 'Rafael Souza', 'Bruno Costa', 'Diego Martins', 'Thiago Alves',
@@ -7,14 +7,6 @@ export const squad = [
 ];
 
 export const fieldPlayers = squad.slice(0, 7);
-
-export const historicalMatches = [
-  'R1 · vs Falcões', 'R2 · vs Titans', 'R3 · vs Leões FC', 'R4 · vs Furacão',
-  'R5 · vs Atlético Vale', 'R6 · vs Unidos SC', 'R7 · vs Estrela Azul', 'R8 · vs Norte FC',
-];
-
-export const LIVE_MATCH_INDEX = historicalMatches.length;
-export const matches = [...historicalMatches, 'Ao vivo (atual)'];
 
 export const zoneLabels = [
   'Esquerda afastada', 'Centro afastado', 'Direita afastada',
@@ -62,30 +54,16 @@ export const stepSeq: Record<EventTypeKey, StepName[]> = {
   lancamento: ['player', 'resultado'],
 };
 
-export const goalOriginBaseline: Record<string, number> = {
-  'contra-ataque': 19,
-  'bola-parada': 12,
-  'transicao': 10,
-  'jogo-organizado': 15,
+export const stepTitles: Record<string, string> = {
+  zone: 'ZONA DE FINALIZAÇÃO',
+  detail: 'COMO FOI O GOL',
+  origin: 'ORIGEM DA JOGADA',
+  scorer: 'QUEM MARCOU',
+  assist: 'ASSISTÊNCIA (OPCIONAL)',
+  cardColor: 'TIPO DE CARTÃO',
+  player: 'JOGADOR',
+  resultado: 'RESULTADO',
 };
-
-export const heatmapBaseline = [3, 8, 4, 2, 15, 3, 5, 12, 2];
-
-/** Deterministic pseudo-random seed, ported verbatim from the design prototype. */
-function seedGoalsForPlayer(idx: number): number[] {
-  let seed = (idx + 1) * 9301 + 49297;
-  const arr: number[] = [];
-  for (let i = 0; i < 8; i++) {
-    seed = (seed * 233280 + idx * 17 + i * 31) % 1000;
-    const v = (Math.abs(seed) % 1000) / 1000;
-    arr.push(Math.floor(v * 3.2));
-  }
-  return arr;
-}
-
-export const historicalGoalsByMatch: Record<string, number[]> = Object.fromEntries(
-  squad.map((p, idx) => [p, seedGoalsForPlayer(idx)]),
-);
 
 export function labelFor(list: KeyLabel[], key: string | undefined): string {
   if (!key) return '';
@@ -93,30 +71,16 @@ export function labelFor(list: KeyLabel[], key: string | undefined): string {
   return found ? found.label : '';
 }
 
-export function buildGoalSummary(data: { zone?: number; detail?: string; origin?: string; scorer?: string; assist?: string }): string {
-  const zone = data.zone !== undefined ? zoneLabels[data.zone] : '';
-  const det = labelFor(detailOptions, data.detail);
-  const origin = labelFor(originOptions, data.origin);
-  const assist = data.assist && data.assist !== 'none' ? ` · Assist.: ${data.assist}` : ' · Sem assistência';
-  return `${data.scorer} · ${zone} · ${det} · ${origin}${assist}`;
-}
-
-export function buildSummary(eventType: EventTypeKey, data: { zone?: number; detail?: string; origin?: string; scorer?: string; assist?: string; cardColor?: string; player?: string; resultado?: string }): string {
-  if (eventType === 'gol') return buildGoalSummary(data);
+export function buildSummary(eventType: EventTypeKey, data: FlowData): string {
+  if (eventType === 'gol') {
+    const zone = data.zone !== undefined ? zoneLabels[data.zone] : '';
+    const det = labelFor(detailOptions, data.detail);
+    const origin = labelFor(originOptions, data.origin);
+    const assist = data.assist && data.assist !== 'none' ? ` · Assist.: ${data.assist}` : ' · Sem assistência';
+    return `${data.scorer} · ${zone} · ${det} · ${origin}${assist}`;
+  }
   if (eventType === 'cartao') return `${labelFor(cardColors, data.cardColor)} · ${data.player}`;
   return `${data.player} · ${labelFor(resultadoOptions, data.resultado)}`;
-}
-
-export function toGoalRecord(id: string, matchIndex: number, data: { zone?: number; detail?: string; origin?: string; scorer?: string; assist?: string }): GoalRecord {
-  return {
-    id,
-    matchIndex,
-    zone: data.zone ?? 0,
-    detail: data.detail ?? '',
-    origin: data.origin ?? '',
-    scorer: data.scorer ?? '',
-    assist: data.assist,
-  };
 }
 
 /** Blue -> blue -> orange interpolation, colorblind-safe (never red/green as a pair). */
@@ -140,19 +104,71 @@ export function heatColor(v: number, max: number): string {
   return `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
 }
 
-export const stepTitles: Record<string, string> = {
-  zone: 'ZONA DE FINALIZAÇÃO',
-  detail: 'COMO FOI O GOL',
-  origin: 'ORIGEM DA JOGADA',
-  scorer: 'QUEM MARCOU',
-  assist: 'ASSISTÊNCIA (OPCIONAL)',
-  cardColor: 'TIPO DE CARTÃO',
-  player: 'JOGADOR',
-  resultado: 'RESULTADO',
-};
+export function formatMinuto(min: number): string {
+  return `${min}'`;
+}
 
-export function formatTime(sec: number): string {
+export function formatClock(sec: number): string {
   const m = Math.floor(sec / 60);
   const s = sec % 60;
   return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+const opponents = ['Falcões', 'Titans', 'Leões FC', 'Furacão', 'Atlético Vale', 'Unidos SC', 'Estrela Azul', 'Norte FC'];
+
+function seededRand(seed: number) {
+  let s = seed;
+  return () => {
+    s = (s * 9301 + 49297) % 233280;
+    return s / 233280;
+  };
+}
+
+/** Seed data ported from the earlier fictitious dashboard baseline, now expressed as real sessões/eventos. */
+export function seedSessoesEEventos(): { sessoes: Sessao[]; eventos: EventoRegistrado[] } {
+  const sessoes: Sessao[] = opponents.map((op, i) => {
+    const rand = seededRand((i + 1) * 733);
+    const placarNos = Math.floor(rand() * 4);
+    const placarAdversario = Math.floor(rand() * 3);
+    const daysAgo = (opponents.length - i) * 7;
+    const d = new Date(Date.now() - daysAgo * 86400000);
+    return {
+      id: `seed-partida-${i}`,
+      tipoSessao: 'partida' as TipoSessao,
+      data: d.toISOString().slice(0, 10),
+      label: `vs ${op}`,
+      comVideo: false,
+      placarNos,
+      placarAdversario,
+      createdAt: d.getTime(),
+    };
+  });
+
+  const eventos: EventoRegistrado[] = [];
+  squad.forEach((player, pIdx) => {
+    const rand = seededRand((pIdx + 1) * 9301 + 49297);
+    sessoes.forEach((sessao) => {
+      const count = Math.floor(rand() * 3.2);
+      for (let i = 0; i < count; i++) {
+        const zone = Math.floor(rand() * zoneLabels.length);
+        const detail = detailOptions[Math.floor(rand() * detailOptions.length)].key;
+        const origin = originOptions[Math.floor(rand() * originOptions.length)].key;
+        const assistCandidates = fieldPlayers.filter((p) => p !== player);
+        const assist = rand() < 0.45 ? assistCandidates[Math.floor(rand() * assistCandidates.length)] : 'none';
+        const minuto = 1 + Math.floor(rand() * 39);
+        const data: FlowData = { zone, detail, origin, scorer: player, assist };
+        eventos.push({
+          id: `seed-evt-${sessao.id}-${pIdx}-${i}`,
+          sessaoId: sessao.id,
+          tipo: 'gol',
+          minuto,
+          data,
+          summary: buildSummary('gol', data),
+          criadoEm: sessao.createdAt + minuto * 60000,
+        });
+      }
+    });
+  });
+
+  return { sessoes, eventos };
 }
