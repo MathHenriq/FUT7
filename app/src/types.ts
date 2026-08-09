@@ -1,9 +1,13 @@
-export type EventTypeKey = 'gol' | 'cartao' | 'passe' | 'cruzamento' | 'lancamento';
+export type EventTypeKey = 'finalizacao' | 'cartao' | 'passe' | 'cruzamento' | 'lancamento';
 
 /** Which team an event belongs to. Never encoded as a red/green pair in the UI. */
 export type Lado = 'nos' | 'adversario';
 
 export type Posicao = 'goleiro' | 'zagueiro' | 'ala' | 'meia' | 'atacante';
+
+/** A goal is a *result* of a shot, not a separate event type — that is what makes
+ *  conversion rate computable and gives missed shots somewhere to live. */
+export type ResultadoFin = 'gol' | 'defendida' | 'trave' | 'fora' | 'bloqueada';
 
 export interface Jogador {
   id: string;
@@ -13,14 +17,19 @@ export interface Jogador {
   ativo: boolean;
 }
 
-export interface EventTypeMeta {
-  key: EventTypeKey;
+export interface EventButton {
+  key: string;
+  tipo: EventTypeKey;
   label: string;
   mono: string;
   shortcut: string;
+  /** Pre-filled fields, so "Gol" stays a one-tap path into the shot flow. */
+  preset?: Partial<FlowData>;
 }
 
-export type StepName = 'local' | 'detail' | 'origin' | 'scorer' | 'assist' | 'cardColor' | 'player' | 'resultado';
+export type StepName =
+  | 'local' | 'resultadoFin' | 'detail' | 'origin' | 'scorer' | 'assist'
+  | 'cardColor' | 'player' | 'resultado';
 
 export interface FlowData {
   /** Pitch coordinates, normalized to the FULL pitch: x 0=left touchline .. 1=right,
@@ -28,12 +37,14 @@ export interface FlowData {
    *  derived at read time, so changing the grid never invalidates recorded history. */
   x?: number;
   y?: number;
+  resultadoFin?: ResultadoFin;
   detail?: string;
   origin?: string;
-  scorer?: string;
-  assist?: string;
+  /** Players are referenced by id — renaming someone must not orphan their history. */
+  scorerId?: string;
+  assistId?: string;
+  playerId?: string;
   cardColor?: string;
-  player?: string;
   resultado?: string;
 }
 
@@ -52,8 +63,6 @@ export interface Sessao {
   comVideo: boolean;
   /** Jogador ids that took part in this session. */
   escalacao: string[];
-  placarNos?: number;
-  placarAdversario?: number;
   createdAt: number;
 }
 
@@ -64,7 +73,6 @@ export interface EventoRegistrado {
   lado: Lado;
   minuto: number;
   data: FlowData;
-  summary: string;
   criadoEm: number;
 }
 
@@ -78,7 +86,7 @@ export interface Config {
 }
 
 export interface FlowState {
-  eventType: EventTypeKey | null;
+  botao: EventButton | null;
   lado: Lado;
   stepIndex: number | 'saved' | 'minuto';
   data: FlowData;

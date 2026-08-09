@@ -1,6 +1,6 @@
 import type {
-  EventTypeKey, EventTypeMeta, EventoRegistrado, FlowData, GradeZonas, Jogador,
-  KeyLabel, Posicao, Sessao, StepName, TipoSessao,
+  EventButton, EventTypeKey, EventoRegistrado, FlowData, GradeZonas, Jogador,
+  KeyLabel, Lado, Posicao, ResultadoFin, Sessao, StepName, TipoSessao,
 } from './types';
 
 export const posicoes: { key: Posicao; label: string; curto: string }[] = [
@@ -38,9 +38,12 @@ export function criarElencoInicial(): Jogador[] {
   return elencoSeed.map((j, i) => ({ id: `jog-seed-${i}`, ativo: true, ...j }));
 }
 
+export function nomeDe(jogadores: Jogador[], id: string | undefined): string {
+  if (!id) return '';
+  return jogadores.find((j) => j.id === id)?.nome ?? 'Jogador removido';
+}
+
 // ---- Pitch coordinates -------------------------------------------------------
-// Everything is stored as normalized full-pitch x,y. Sector grids are derived,
-// which is what lets the 9 <-> 12 setting re-bucket the whole history losslessly.
 
 export const colunasLabels = ['Esquerda', 'Centro', 'Direita'];
 
@@ -71,33 +74,48 @@ export function setorLabels(grade: GradeZonas): string[] {
   return out;
 }
 
-/** Human description of a point, finer than the sector grid so summaries stay readable. */
 export function descreveLocal(x?: number, y?: number): string {
   if (x === undefined || y === undefined) return 'local não informado';
   const col = x < 1 / 3 ? 'esquerda' : x < 2 / 3 ? 'centro' : 'direita';
   let faixa: string;
-  if (y >= 0.86) faixa = 'pequena área';
-  else if (y >= 0.7) faixa = 'meia-lua';
-  else if (y >= 0.55) faixa = 'entrada de área';
-  else if (y >= 0.35) faixa = 'meio-campo';
+  if (y >= 0.88) faixa = 'pequena área';
+  else if (y >= 0.72) faixa = 'meia-lua';
+  else if (y >= 0.52) faixa = 'ataque afastado';
+  else if (y >= 0.26) faixa = 'meio-campo';
   else faixa = 'campo defensivo';
   return `${faixa} ${col}`;
 }
 
-/** The 3x3 attacking-third picker still used during capture, expressed as coordinates. */
+/** Interim location picker: the FULL pitch, not just the attacking half — a keeper's
+ *  kick has to be recordable. Replaced by the pitch-image picker later; coordinates
+ *  are already stored full-pitch so that swap costs no data. */
 export const localPresets: { key: string; label: string; x: number; y: number }[] = [
-  { key: 'p0', label: 'Esquerda afastada', x: 0.2, y: 0.62 },
-  { key: 'p1', label: 'Centro afastado', x: 0.5, y: 0.62 },
-  { key: 'p2', label: 'Direita afastada', x: 0.8, y: 0.62 },
-  { key: 'p3', label: 'Esquerda meia-lua', x: 0.2, y: 0.78 },
-  { key: 'p4', label: 'Centro meia-lua', x: 0.5, y: 0.78 },
-  { key: 'p5', label: 'Direita meia-lua', x: 0.8, y: 0.78 },
-  { key: 'p6', label: 'Esquerda pequena área', x: 0.2, y: 0.93 },
-  { key: 'p7', label: 'Centro pequena área', x: 0.5, y: 0.93 },
-  { key: 'p8', label: 'Direita pequena área', x: 0.8, y: 0.93 },
+  { key: 'l0', label: 'Peq. área esq.', x: 0.2, y: 0.95 },
+  { key: 'l1', label: 'Peq. área centro', x: 0.5, y: 0.95 },
+  { key: 'l2', label: 'Peq. área dir.', x: 0.8, y: 0.95 },
+  { key: 'l3', label: 'Meia-lua esq.', x: 0.2, y: 0.8 },
+  { key: 'l4', label: 'Meia-lua centro', x: 0.5, y: 0.8 },
+  { key: 'l5', label: 'Meia-lua dir.', x: 0.8, y: 0.8 },
+  { key: 'l6', label: 'Ataque afast. esq.', x: 0.2, y: 0.62 },
+  { key: 'l7', label: 'Ataque afast. centro', x: 0.5, y: 0.62 },
+  { key: 'l8', label: 'Ataque afast. dir.', x: 0.8, y: 0.62 },
+  { key: 'l9', label: 'Meio-campo esq.', x: 0.2, y: 0.4 },
+  { key: 'l10', label: 'Meio-campo centro', x: 0.5, y: 0.4 },
+  { key: 'l11', label: 'Meio-campo dir.', x: 0.8, y: 0.4 },
+  { key: 'l12', label: 'Nosso campo esq.', x: 0.2, y: 0.12 },
+  { key: 'l13', label: 'Nosso campo centro', x: 0.5, y: 0.12 },
+  { key: 'l14', label: 'Nosso campo dir.', x: 0.8, y: 0.12 },
 ];
 
 // ---- Event vocabulary --------------------------------------------------------
+
+export const resultadoFinOptions: { key: ResultadoFin; label: string }[] = [
+  { key: 'gol', label: 'Gol' },
+  { key: 'defendida', label: 'Defendida' },
+  { key: 'trave', label: 'Na trave' },
+  { key: 'fora', label: 'Pra fora' },
+  { key: 'bloqueada', label: 'Bloqueada' },
+];
 
 export const detailOptions: KeyLabel[] = [
   { key: 'pe-direito', label: 'Pé direito' },
@@ -123,38 +141,86 @@ export const resultadoOptions: KeyLabel[] = [
   { key: 'errado', label: 'Errado' },
 ];
 
-export const eventTypesMeta: EventTypeMeta[] = [
-  { key: 'gol', label: 'Gol', mono: 'GOL', shortcut: 'G' },
-  { key: 'cartao', label: 'Cartão', mono: 'CA', shortcut: 'C' },
-  { key: 'passe', label: 'Passe', mono: 'PA', shortcut: 'P' },
-  { key: 'cruzamento', label: 'Cruzamento', mono: 'CR', shortcut: 'X' },
-  { key: 'lancamento', label: 'Lançamento', mono: 'LA', shortcut: 'L' },
+export const eventButtons: EventButton[] = [
+  { key: 'gol', tipo: 'finalizacao', label: 'Gol', mono: 'GOL', shortcut: 'G', preset: { resultadoFin: 'gol' } },
+  { key: 'finalizacao', tipo: 'finalizacao', label: 'Finalização', mono: 'FIN', shortcut: 'F' },
+  { key: 'passe', tipo: 'passe', label: 'Passe', mono: 'PA', shortcut: 'P' },
+  { key: 'cruzamento', tipo: 'cruzamento', label: 'Cruzamento', mono: 'CR', shortcut: 'X' },
+  { key: 'lancamento', tipo: 'lancamento', label: 'Lançamento', mono: 'LA', shortcut: 'L' },
+  { key: 'cartao', tipo: 'cartao', label: 'Cartão', mono: 'CA', shortcut: 'C' },
 ];
 
-const stepSeqBase: Record<EventTypeKey, StepName[]> = {
-  gol: ['local', 'detail', 'origin', 'scorer', 'assist'],
-  cartao: ['cardColor', 'player'],
-  passe: ['player', 'resultado'],
-  cruzamento: ['player', 'resultado'],
-  lancamento: ['player', 'resultado'],
-};
+export function labelTipo(tipo: EventTypeKey): string {
+  switch (tipo) {
+    case 'finalizacao': return 'Finalização';
+    case 'cartao': return 'Cartão';
+    case 'passe': return 'Passe';
+    case 'cruzamento': return 'Cruzamento';
+    case 'lancamento': return 'Lançamento';
+  }
+}
 
 const passosDeJogador: StepName[] = ['scorer', 'assist', 'player'];
 
-/** Opponent events skip our roster steps — we don't keep their squad, and live
- *  tagging has to stay fast. */
-export function stepsPara(eventType: EventTypeKey, lado: 'nos' | 'adversario'): StepName[] {
-  const seq = stepSeqBase[eventType];
+/** Step order depends on what's already filled: assist only exists for a goal, and the
+ *  opponent's roster isn't ours to track, so their events skip player steps. */
+export function stepsPara(tipo: EventTypeKey, lado: Lado, data: FlowData): StepName[] {
+  let seq: StepName[];
+  switch (tipo) {
+    case 'finalizacao':
+      seq = ['resultadoFin', 'local', 'detail', 'origin', 'scorer'];
+      if (data.resultadoFin === 'gol') seq.push('assist');
+      break;
+    case 'cartao':
+      seq = ['cardColor', 'player'];
+      break;
+    default:
+      // Passe / cruzamento / lançamento now record where the ball left from, which is
+      // what makes "de onde saem mais lançamentos" answerable at all.
+      seq = ['local', 'player', 'resultado'];
+      break;
+  }
   if (lado === 'nos') return seq;
   const filtrado = seq.filter((s) => !passosDeJogador.includes(s));
   return filtrado.length > 0 ? filtrado : [seq[0]];
 }
 
-export const stepTitles: Record<string, string> = {
-  local: 'ZONA DE FINALIZAÇÃO',
-  detail: 'COMO FOI O GOL',
+/** Step -> FlowData field mapping lives here so the capture screen never has to know
+ *  that 'local' means two coordinates and 'scorer' means an id. */
+export function aplicarPasso(data: FlowData, step: StepName, value: string | number): FlowData {
+  switch (step) {
+    case 'local': {
+      const preset = localPresets.find((p) => p.key === value);
+      return { ...data, x: preset?.x, y: preset?.y };
+    }
+    case 'resultadoFin': return { ...data, resultadoFin: value as ResultadoFin };
+    case 'scorer': return { ...data, scorerId: String(value) };
+    case 'assist': return { ...data, assistId: String(value) };
+    case 'player': return { ...data, playerId: String(value) };
+    default: return { ...data, [step]: value };
+  }
+}
+
+export function passoPreenchido(step: StepName, data: FlowData): boolean {
+  switch (step) {
+    case 'local': return data.x !== undefined && data.y !== undefined;
+    case 'resultadoFin': return data.resultadoFin !== undefined;
+    case 'detail': return data.detail !== undefined;
+    case 'origin': return data.origin !== undefined;
+    case 'scorer': return data.scorerId !== undefined;
+    case 'assist': return data.assistId !== undefined;
+    case 'cardColor': return data.cardColor !== undefined;
+    case 'player': return data.playerId !== undefined;
+    case 'resultado': return data.resultado !== undefined;
+  }
+}
+
+export const stepTitles: Record<StepName, string> = {
+  resultadoFin: 'NO QUE DEU A FINALIZAÇÃO',
+  local: 'DE ONDE SAIU',
+  detail: 'COMO FOI',
   origin: 'ORIGEM DA JOGADA',
-  scorer: 'QUEM MARCOU',
+  scorer: 'QUEM FINALIZOU',
   assist: 'ASSISTÊNCIA (OPCIONAL)',
   cardColor: 'TIPO DE CARTÃO',
   player: 'JOGADOR',
@@ -163,26 +229,53 @@ export const stepTitles: Record<string, string> = {
 
 export function labelFor(list: KeyLabel[], key: string | undefined): string {
   if (!key) return '';
-  const found = list.find((o) => o.key === key);
-  return found ? found.label : '';
+  return list.find((o) => o.key === key)?.label ?? '';
 }
 
-export function buildSummary(eventType: EventTypeKey, data: FlowData, lado: 'nos' | 'adversario'): string {
-  const quem = lado === 'adversario' ? 'Adversário' : undefined;
-  if (eventType === 'gol') {
-    const local = descreveLocal(data.x, data.y);
-    const det = labelFor(detailOptions, data.detail);
-    const origin = labelFor(originOptions, data.origin);
-    const partes = [quem ?? data.scorer, local, det, origin].filter(Boolean);
-    if (lado === 'nos') {
-      partes.push(data.assist && data.assist !== 'none' ? `Assist.: ${data.assist}` : 'Sem assistência');
+/** Built at render time from the roster, so renaming a player updates their history. */
+export function resumoEvento(evento: EventoRegistrado, jogadores: Jogador[]): string {
+  const { data, tipo, lado } = evento;
+  const adversario = lado === 'adversario';
+
+  if (tipo === 'finalizacao') {
+    const res = resultadoFinOptions.find((r) => r.key === data.resultadoFin)?.label ?? '';
+    const partes = [
+      res,
+      adversario ? 'Adversário' : nomeDe(jogadores, data.scorerId),
+      descreveLocal(data.x, data.y),
+      labelFor(detailOptions, data.detail),
+      labelFor(originOptions, data.origin),
+    ].filter(Boolean);
+    if (!adversario && data.resultadoFin === 'gol') {
+      partes.push(data.assistId && data.assistId !== 'none'
+        ? `Assist.: ${nomeDe(jogadores, data.assistId)}`
+        : 'Sem assistência');
     }
     return partes.join(' · ');
   }
-  if (eventType === 'cartao') {
-    return [labelFor(cardColors, data.cardColor), quem ?? data.player].filter(Boolean).join(' · ');
+
+  if (tipo === 'cartao') {
+    return [labelFor(cardColors, data.cardColor), adversario ? 'Adversário' : nomeDe(jogadores, data.playerId)]
+      .filter(Boolean).join(' · ');
   }
-  return [quem ?? data.player, labelFor(resultadoOptions, data.resultado)].filter(Boolean).join(' · ');
+
+  return [
+    adversario ? 'Adversário' : nomeDe(jogadores, data.playerId),
+    descreveLocal(data.x, data.y),
+    labelFor(resultadoOptions, data.resultado),
+  ].filter(Boolean).join(' · ');
+}
+
+export function ehGol(e: EventoRegistrado): boolean {
+  return e.tipo === 'finalizacao' && e.data.resultadoFin === 'gol';
+}
+
+export function placarDaSessao(eventos: EventoRegistrado[], sessaoId: string): { nos: number; adversario: number } {
+  const gols = eventos.filter((e) => e.sessaoId === sessaoId && ehGol(e));
+  return {
+    nos: gols.filter((e) => e.lado === 'nos').length,
+    adversario: gols.filter((e) => e.lado === 'adversario').length,
+  };
 }
 
 /** Blue -> blue -> orange interpolation, colorblind-safe (never red/green as a pair). */
@@ -227,12 +320,7 @@ function seededRand(seed: number) {
 }
 
 export function seedSessoesEEventos(jogadores: Jogador[]): { sessoes: Sessao[]; eventos: EventoRegistrado[] } {
-  const linha = jogadores.filter((j) => j.posicao !== 'goleiro');
-
   const sessoes: Sessao[] = opponents.map((op, i) => {
-    const rand = seededRand((i + 1) * 733);
-    const placarNos = Math.floor(rand() * 4);
-    const placarAdversario = Math.floor(rand() * 3);
     const daysAgo = (opponents.length - i) * 7;
     const d = new Date(Date.now() - daysAgo * 86400000);
     return {
@@ -242,60 +330,67 @@ export function seedSessoesEEventos(jogadores: Jogador[]): { sessoes: Sessao[]; 
       label: `vs ${op}`,
       comVideo: false,
       escalacao: jogadores.map((j) => j.id),
-      placarNos,
-      placarAdversario,
       createdAt: d.getTime(),
     };
   });
 
   const eventos: EventoRegistrado[] = [];
+  const pesosResultado: ResultadoFin[] = ['gol', 'gol', 'defendida', 'defendida', 'fora', 'fora', 'trave', 'bloqueada'];
+
   jogadores.forEach((jog, pIdx) => {
     const rand = seededRand((pIdx + 1) * 9301 + 49297);
     sessoes.forEach((sessao) => {
-      const count = Math.floor(rand() * 3.2);
+      const count = Math.floor(rand() * 4.5);
       for (let i = 0; i < count; i++) {
-        const preset = localPresets[Math.floor(rand() * localPresets.length)];
-        const detail = detailOptions[Math.floor(rand() * detailOptions.length)].key;
-        const origin = originOptions[Math.floor(rand() * originOptions.length)].key;
-        const candidatos = linha.filter((p) => p.id !== jog.id);
-        const assist = rand() < 0.45 ? candidatos[Math.floor(rand() * candidatos.length)].nome : 'none';
+        // Keepers shoot from their own half; everyone else from the attacking end.
+        const pool = jog.posicao === 'goleiro' ? localPresets.slice(12) : localPresets.slice(0, 12);
+        const preset = pool[Math.floor(rand() * pool.length)];
+        const candidatos = jogadores.filter((p) => p.id !== jog.id);
         const minuto = 1 + Math.floor(rand() * 39);
-        const data: FlowData = { x: preset.x, y: preset.y, detail, origin, scorer: jog.nome, assist };
+        const resultadoFin = pesosResultado[Math.floor(rand() * pesosResultado.length)];
+        const data: FlowData = {
+          x: preset.x,
+          y: preset.y,
+          resultadoFin,
+          detail: detailOptions[Math.floor(rand() * detailOptions.length)].key,
+          origin: originOptions[Math.floor(rand() * originOptions.length)].key,
+          scorerId: jog.id,
+          assistId: resultadoFin === 'gol' && rand() < 0.45
+            ? candidatos[Math.floor(rand() * candidatos.length)].id
+            : 'none',
+        };
         eventos.push({
           id: `seed-evt-${sessao.id}-${pIdx}-${i}`,
           sessaoId: sessao.id,
-          tipo: 'gol',
+          tipo: 'finalizacao',
           lado: 'nos',
           minuto,
           data,
-          summary: buildSummary('gol', data, 'nos'),
           criadoEm: sessao.createdAt + minuto * 60000,
         });
       }
     });
   });
 
-  // A few opponent goals so the nós x adversário split has something to show.
   sessoes.forEach((sessao, sIdx) => {
     const rand = seededRand((sIdx + 1) * 4111);
-    const count = sessao.placarAdversario ?? 0;
+    const count = 1 + Math.floor(rand() * 4);
     for (let i = 0; i < count; i++) {
-      const preset = localPresets[Math.floor(rand() * localPresets.length)];
+      const preset = localPresets[Math.floor(rand() * 12)];
       const minuto = 1 + Math.floor(rand() * 39);
-      const data: FlowData = {
-        x: preset.x,
-        y: preset.y,
-        detail: detailOptions[Math.floor(rand() * detailOptions.length)].key,
-        origin: originOptions[Math.floor(rand() * originOptions.length)].key,
-      };
       eventos.push({
         id: `seed-evt-adv-${sessao.id}-${i}`,
         sessaoId: sessao.id,
-        tipo: 'gol',
-        lado: 'adversario',
+        tipo: 'finalizacao',
+        lado: 'adversario' as Lado,
         minuto,
-        data,
-        summary: buildSummary('gol', data, 'adversario'),
+        data: {
+          x: preset.x,
+          y: preset.y,
+          resultadoFin: pesosResultado[Math.floor(rand() * pesosResultado.length)],
+          detail: detailOptions[Math.floor(rand() * detailOptions.length)].key,
+          origin: originOptions[Math.floor(rand() * originOptions.length)].key,
+        },
         criadoEm: sessao.createdAt + minuto * 60000,
       });
     }

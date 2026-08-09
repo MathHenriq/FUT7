@@ -50,7 +50,7 @@ export default function ElencoScreen() {
 
   function remover(j: Jogador) {
     const usados = state.eventos.filter(
-      (e) => e.data.scorer === j.nome || e.data.player === j.nome || e.data.assist === j.nome,
+      (e) => e.data.scorerId === j.id || e.data.playerId === j.id || e.data.assistId === j.id,
     ).length;
     const aviso = usados > 0
       ? `${j.nome} aparece em ${usados} evento(s) já registrado(s). Os eventos continuam, mas o jogador sai do elenco. Remover?`

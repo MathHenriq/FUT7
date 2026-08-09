@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useApp } from '../store';
-import { heatColor, linhasDaGrade, originOptions, setorIndex, setorLabels } from '../data';
+import { ehGol, heatColor, linhasDaGrade, originOptions, setorIndex, setorLabels } from '../data';
 import type { Lado } from '../types';
 
 const CHART_W = 560;
@@ -14,7 +14,8 @@ export function useDashboardData(lado: Lado) {
   const { gradeZonas } = state.config;
 
   return useMemo(() => {
-    const golsDoLado = state.eventos.filter((e) => e.tipo === 'gol' && e.lado === lado);
+    const finsDoLado = state.eventos.filter((e) => e.tipo === 'finalizacao' && e.lado === lado);
+    const golsDoLado = finsDoLado.filter(ehGol);
 
     const originCounts = originOptions.map((o) => ({
       label: o.label,
@@ -41,9 +42,9 @@ export function useDashboardData(lado: Lado) {
     const semLocal = golsDoLado.filter((g) => g.data.x === undefined).length;
 
     const sessoesOrdenadas = [...state.sessoes].sort((a, b) => a.createdAt - b.createdAt);
-    const golsNossos = state.eventos.filter((e) => e.tipo === 'gol' && e.lado === 'nos');
+    const golsNossos = state.eventos.filter((e) => e.lado === 'nos' && ehGol(e));
     const goalsByMatch = sessoesOrdenadas.map(
-      (s) => golsNossos.filter((g) => g.sessaoId === s.id && g.data.scorer === state.dashPlayer).length,
+      (s) => golsNossos.filter((g) => g.sessaoId === s.id && g.data.scorerId === state.dashPlayerId).length,
     );
 
     const maxVal = Math.max(BASE_MAX_VAL, ...goalsByMatch);
@@ -66,12 +67,17 @@ export function useDashboardData(lado: Lado) {
     const selLabel = state.dashSessao === 'all' ? 'na temporada' : `em ${selSessao?.label ?? ''}`;
     const sessaoOptionsList = sessoesOrdenadas.map((s) => ({ id: s.id, label: s.label }));
 
-    const golsPro = state.eventos.filter((e) => e.tipo === 'gol' && e.lado === 'nos').length;
-    const golsContra = state.eventos.filter((e) => e.tipo === 'gol' && e.lado === 'adversario').length;
+    const golsPro = state.eventos.filter((e) => e.lado === 'nos' && ehGol(e)).length;
+    const golsContra = state.eventos.filter((e) => e.lado === 'adversario' && ehGol(e)).length;
+
+    // Only computable now that a shot exists independently of a goal.
+    const finalizacoes = finsDoLado.length;
+    const aproveitamento = finalizacoes > 0 ? Math.round((golsDoLado.length / finalizacoes) * 100) : 0;
 
     return {
       goalOrigin, heatCells, heatRows, semLocal, chartPath, chartPoints,
       totalGoalsSel, selLabel, sessaoOptionsList, golsPro, golsContra,
+      finalizacoes, aproveitamento, golsDoLado: golsDoLado.length,
     };
-  }, [state.eventos, state.sessoes, state.dashPlayer, state.dashSessao, gradeZonas, lado]);
+  }, [state.eventos, state.sessoes, state.dashPlayerId, state.dashSessao, gradeZonas, lado]);
 }

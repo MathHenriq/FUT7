@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { colors, fontDisplay } from '../colors';
-import { curtoPosicao } from '../data';
+import { curtoPosicao, placarDaSessao } from '../data';
 import { useApp } from '../store';
 import type { TipoSessao } from '../types';
 
@@ -140,9 +140,10 @@ export default function SessoesScreen() {
               {s.tipoSessao === 'partida' ? 'PARTIDA' : 'TREINO'}
             </div>
             <div style={{ flex: 1, minWidth: 160, fontSize: 14, fontWeight: 600 }}>{s.label}</div>
-            {s.tipoSessao === 'partida' && s.placarNos !== undefined && (
-              <div style={{ fontFamily: fontDisplay, fontSize: 16, fontWeight: 800 }}>{s.placarNos} — {s.placarAdversario}</div>
-            )}
+            {s.tipoSessao === 'partida' && (() => {
+              const p = placarDaSessao(state.eventos, s.id);
+              return <div style={{ fontFamily: fontDisplay, fontSize: 16, fontWeight: 800 }}>{p.nos} — {p.adversario}</div>;
+            })()}
             <div style={{ fontSize: 12, color: colors.mutedDark, minWidth: 90 }}>{s.data}</div>
             <div style={{ fontSize: 12, color: colors.mutedDark }}>{s.comVideo ? 'com vídeo' : 'retroativo'}</div>
             <div style={{ fontSize: 12, color: colors.mutedDark }}>{s.escalacao.length} jogadores</div>

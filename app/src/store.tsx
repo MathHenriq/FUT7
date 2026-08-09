@@ -2,10 +2,11 @@ import { createContext, useContext, useEffect, useMemo, useReducer, type ReactNo
 import type {
   Config, EventTypeKey, EventoRegistrado, FlowData, GradeZonas, Jogador, Lado, Sessao, TipoSessao,
 } from './types';
-import { buildSummary, criarElencoInicial, localPresets, seedSessoesEEventos } from './data';
+import { criarElencoInicial, seedSessoesEEventos } from './data';
 
-const STORAGE_KEY = 'fut7-analytics-v3';
-const LEGACY_KEY = 'fut7-analytics-v2';
+const STORAGE_KEY = 'fut7-analytics-v4';
+const LEGACY_V3 = 'fut7-analytics-v3';
+const LEGACY_V2 = 'fut7-analytics-v2';
 
 interface AppState {
   jogadores: Jogador[];
@@ -13,7 +14,7 @@ interface AppState {
   eventos: EventoRegistrado[];
   config: Config;
   currentSessaoId: string | null;
-  dashPlayer: string;
+  dashPlayerId: string;
   dashSessao: string;
 }
 
@@ -28,31 +29,28 @@ function estadoSemeado(): AppState {
     eventos,
     config: defaultConfig,
     currentSessaoId: null,
-    dashPlayer: jogadores[0]?.nome ?? '',
+    dashPlayerId: jogadores[0]?.id ?? '',
     dashSessao: 'all',
   };
 }
 
-/** v2 stored `data.zone` (0-8 over the attacking third) and had no roster or lado.
- *  Coordinates are recovered from the same preset table the picker still uses, so
- *  nothing recorded before this change is lost. */
-function migrarDeV2(parsed: {
-  sessoes?: unknown[];
-  eventos?: unknown[];
-  currentSessaoId?: string | null;
-  dashPlayer?: string;
-  dashSessao?: string;
-}): AppState {
+type Loose = Record<string, unknown>;
+
+/** v2 sector indices, kept verbatim so old records land where they were actually meant. */
+const legadoZonasV2 = [
+  { x: 0.2, y: 0.62 }, { x: 0.5, y: 0.62 }, { x: 0.8, y: 0.62 },
+  { x: 0.2, y: 0.78 }, { x: 0.5, y: 0.78 }, { x: 0.8, y: 0.78 },
+  { x: 0.2, y: 0.93 }, { x: 0.5, y: 0.93 }, { x: 0.8, y: 0.93 },
+];
+
+/** v2 -> v3 shape: adds a roster, a lado, and turns sector indices into coordinates. */
+function migrarV2(parsed: Loose): Loose {
+  const eventosV2 = (parsed.eventos ?? []) as Loose[];
   const jogadores = criarElencoInicial();
   const porNome = new Map(jogadores.map((j) => [j.nome, j]));
 
-  const sessoesV2 = (parsed.sessoes ?? []) as Record<string, unknown>[];
-  const eventosV2 = (parsed.eventos ?? []) as Record<string, unknown>[];
-
-  // Any player name that shows up in old events but isn't in the seed roster gets added,
-  // otherwise their history would point at nobody.
   for (const e of eventosV2) {
-    const d = (e.data ?? {}) as Record<string, unknown>;
+    const d = (e.data ?? {}) as Loose;
     for (const campo of ['scorer', 'player', 'assist']) {
       const nome = d[campo];
       if (typeof nome === 'string' && nome && nome !== 'none' && !porNome.has(nome)) {
@@ -63,54 +61,88 @@ function migrarDeV2(parsed: {
     }
   }
 
-  const sessoes: Sessao[] = sessoesV2.map((s) => ({
+  const sessoes = ((parsed.sessoes ?? []) as Loose[]).map((s) => ({
+    ...s,
+    escalacao: jogadores.map((j) => j.id),
+  }));
+
+  const eventos = eventosV2.map((e) => {
+    const antigo = (e.data ?? {}) as Loose;
+    const zone = typeof antigo.zone === 'number' ? antigo.zone : undefined;
+    const coord = zone !== undefined ? legadoZonasV2[zone] : undefined;
+    return { ...e, lado: 'nos', data: { ...antigo, x: coord?.x, y: coord?.y } };
+  });
+
+  return { ...parsed, jogadores, sessoes, eventos };
+}
+
+/** v3 -> v4: goals become shots carrying a result, player references become ids,
+ *  scores stop being stored (they are derived from the goal events themselves). */
+function migrarV3(parsed: Loose): AppState {
+  const base = estadoSemeado();
+  const jogadores = (Array.isArray(parsed.jogadores) && parsed.jogadores.length > 0
+    ? parsed.jogadores as Jogador[]
+    : criarElencoInicial()).map((j) => ({ ...j }));
+  const porNome = new Map(jogadores.map((j) => [j.nome, j]));
+
+  const idPara = (nome: unknown): string | undefined => {
+    if (typeof nome !== 'string' || !nome) return undefined;
+    if (nome === 'none') return 'none';
+    const achado = porNome.get(nome);
+    if (achado) return achado.id;
+    const novo: Jogador = { id: `jog-mig-${porNome.size}`, nome, posicao: 'meia', ativo: true };
+    porNome.set(nome, novo);
+    jogadores.push(novo);
+    return novo.id;
+  };
+
+  const eventos: EventoRegistrado[] = ((parsed.eventos ?? []) as Loose[]).map((e) => {
+    const d = (e.data ?? {}) as Loose;
+    const tipoAntigo = String(e.tipo ?? 'gol');
+    const eraGol = tipoAntigo === 'gol';
+    const data: FlowData = {
+      x: d.x as number | undefined,
+      y: d.y as number | undefined,
+      resultadoFin: eraGol ? 'gol' : undefined,
+      detail: d.detail as string | undefined,
+      origin: d.origin as string | undefined,
+      scorerId: idPara(d.scorer),
+      assistId: idPara(d.assist),
+      playerId: idPara(d.player),
+      cardColor: d.cardColor as string | undefined,
+      resultado: d.resultado as string | undefined,
+    };
+    return {
+      id: String(e.id),
+      sessaoId: String(e.sessaoId),
+      tipo: (eraGol ? 'finalizacao' : tipoAntigo) as EventTypeKey,
+      lado: (e.lado === 'adversario' ? 'adversario' : 'nos') as Lado,
+      minuto: Number(e.minuto ?? 0),
+      data,
+      criadoEm: Number(e.criadoEm ?? Date.now()),
+    };
+  });
+
+  const sessoes: Sessao[] = ((parsed.sessoes ?? []) as Loose[]).map((s) => ({
     id: String(s.id),
     tipoSessao: (s.tipoSessao as TipoSessao) ?? 'partida',
     data: String(s.data ?? new Date().toISOString().slice(0, 10)),
     label: String(s.label ?? 'Sessão'),
     comVideo: Boolean(s.comVideo),
-    escalacao: jogadores.map((j) => j.id),
-    placarNos: s.placarNos as number | undefined,
-    placarAdversario: s.placarAdversario as number | undefined,
+    escalacao: Array.isArray(s.escalacao) ? (s.escalacao as string[]) : jogadores.map((j) => j.id),
     createdAt: Number(s.createdAt ?? Date.now()),
   }));
 
-  const eventos: EventoRegistrado[] = eventosV2.map((e) => {
-    const antigo = (e.data ?? {}) as Record<string, unknown>;
-    const zone = typeof antigo.zone === 'number' ? antigo.zone : undefined;
-    const preset = zone !== undefined ? localPresets[zone] : undefined;
-    const data: FlowData = {
-      x: preset?.x,
-      y: preset?.y,
-      detail: antigo.detail as string | undefined,
-      origin: antigo.origin as string | undefined,
-      scorer: antigo.scorer as string | undefined,
-      assist: antigo.assist as string | undefined,
-      cardColor: antigo.cardColor as string | undefined,
-      player: antigo.player as string | undefined,
-      resultado: antigo.resultado as string | undefined,
-    };
-    const tipo = (e.tipo as EventTypeKey) ?? 'gol';
-    return {
-      id: String(e.id),
-      sessaoId: String(e.sessaoId),
-      tipo,
-      lado: 'nos' as Lado,
-      minuto: Number(e.minuto ?? 0),
-      data,
-      summary: buildSummary(tipo, data, 'nos'),
-      criadoEm: Number(e.criadoEm ?? Date.now()),
-    };
-  });
+  const dashPlayerId = porNome.get(String(parsed.dashPlayer ?? ''))?.id ?? jogadores[0]?.id ?? '';
 
   return {
     jogadores,
-    sessoes,
-    eventos,
-    config: defaultConfig,
-    currentSessaoId: parsed.currentSessaoId ?? null,
-    dashPlayer: parsed.dashPlayer ?? jogadores[0]?.nome ?? '',
-    dashSessao: parsed.dashSessao ?? 'all',
+    sessoes: sessoes.length > 0 ? sessoes : base.sessoes,
+    eventos: sessoes.length > 0 ? eventos : base.eventos,
+    config: { ...defaultConfig, ...((parsed.config ?? {}) as Partial<Config>) },
+    currentSessaoId: (parsed.currentSessaoId as string | null) ?? null,
+    dashPlayerId,
+    dashSessao: String(parsed.dashSessao ?? 'all'),
   };
 }
 
@@ -119,15 +151,14 @@ function loadInitialState(): AppState {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed && Array.isArray(parsed.jogadores) && Array.isArray(parsed.sessoes) && Array.isArray(parsed.eventos)) {
+      if (parsed && Array.isArray(parsed.jogadores) && Array.isArray(parsed.eventos)) {
         return { ...estadoSemeado(), ...parsed, config: { ...defaultConfig, ...(parsed.config ?? {}) } };
       }
     }
-    const legacy = localStorage.getItem(LEGACY_KEY);
-    if (legacy) {
-      const parsed = JSON.parse(legacy);
-      if (parsed && Array.isArray(parsed.sessoes) && Array.isArray(parsed.eventos)) return migrarDeV2(parsed);
-    }
+    const v3 = localStorage.getItem(LEGACY_V3);
+    if (v3) return migrarV3(JSON.parse(v3));
+    const v2 = localStorage.getItem(LEGACY_V2);
+    if (v2) return migrarV3(migrarV2(JSON.parse(v2)));
   } catch {
     // corrupt storage falls through to a fresh seed
   }
@@ -145,7 +176,7 @@ type Action =
   | { type: 'UPDATE_JOGADOR'; jogador: Jogador }
   | { type: 'DELETE_JOGADOR'; id: string }
   | { type: 'SET_CONFIG'; config: Partial<Config> }
-  | { type: 'SET_DASH_PLAYER'; player: string }
+  | { type: 'SET_DASH_PLAYER'; playerId: string }
   | { type: 'SET_DASH_SESSAO'; sessaoId: string };
 
 function reducer(state: AppState, action: Action): AppState {
@@ -165,14 +196,7 @@ function reducer(state: AppState, action: Action): AppState {
       return {
         ...state,
         eventos: state.eventos.map((e) => (e.id === action.id
-          ? {
-            ...e,
-            tipo: action.tipo,
-            lado: action.lado,
-            minuto: action.minuto,
-            data: action.data,
-            summary: buildSummary(action.tipo, action.data, action.lado),
-          }
+          ? { ...e, tipo: action.tipo, lado: action.lado, minuto: action.minuto, data: action.data }
           : e)),
       };
     case 'DELETE_EVENTO':
@@ -180,10 +204,7 @@ function reducer(state: AppState, action: Action): AppState {
     case 'ADD_JOGADOR':
       return { ...state, jogadores: [...state.jogadores, action.jogador] };
     case 'UPDATE_JOGADOR':
-      return {
-        ...state,
-        jogadores: state.jogadores.map((j) => (j.id === action.jogador.id ? action.jogador : j)),
-      };
+      return { ...state, jogadores: state.jogadores.map((j) => (j.id === action.jogador.id ? action.jogador : j)) };
     case 'DELETE_JOGADOR':
       return {
         ...state,
@@ -193,7 +214,7 @@ function reducer(state: AppState, action: Action): AppState {
     case 'SET_CONFIG':
       return { ...state, config: { ...state.config, ...action.config } };
     case 'SET_DASH_PLAYER':
-      return { ...state, dashPlayer: action.player };
+      return { ...state, dashPlayerId: action.playerId };
     case 'SET_DASH_SESSAO':
       return { ...state, dashSessao: action.sessaoId };
     default:
@@ -206,7 +227,6 @@ interface Ctx {
   dispatch: React.Dispatch<Action>;
   createSessao: (input: {
     tipoSessao: TipoSessao; label: string; comVideo: boolean; data: string; escalacao: string[];
-    placarNos?: number; placarAdversario?: number;
   }) => string;
   saveEvento: (sessaoId: string, tipo: EventTypeKey, lado: Lado, minuto: number, data: FlowData) => void;
   updateEvento: (id: string, tipo: EventTypeKey, lado: Lado, minuto: number, data: FlowData) => void;
@@ -241,10 +261,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     saveEvento: (sessaoId, tipo, lado, minuto, data) => {
       dispatch({
         type: 'ADD_EVENTO',
-        evento: {
-          id: novoId('evt'), sessaoId, tipo, lado, minuto, data,
-          summary: buildSummary(tipo, data, lado), criadoEm: Date.now(),
-        },
+        evento: { id: novoId('evt'), sessaoId, tipo, lado, minuto, data, criadoEm: Date.now() },
       });
     },
     updateEvento: (id, tipo, lado, minuto, data) => dispatch({ type: 'UPDATE_EVENTO', id, tipo, lado, minuto, data }),

@@ -146,9 +146,7 @@ input[type="number"] {
 .opt-zone-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(3, 1fr);
   gap: 6px;
-  height: 230px;
   background: #0e1620;
   border: 1px solid #232d38;
   border-radius: 12px;
@@ -162,6 +160,7 @@ input[type="number"] {
   font-size: 10px;
   font-weight: 600;
   color: #c3ccd4;
+  min-height: 46px;
   padding: 4px;
   border-radius: 8px;
   cursor: pointer;
@@ -253,15 +252,11 @@ input[type="number"] {
 
 @media (min-width: 768px) {
   .opt-zone-grid {
-    max-width: 340px;
-    height: auto;
-    aspect-ratio: 1;
-    background: none;
-    border: none;
-    padding: 0;
+    max-width: 360px;
   }
   .opt-zone-cell {
     padding: 10px 6px;
+    min-height: 40px;
     border-radius: 6px;
   }
   .opt-grid2 {

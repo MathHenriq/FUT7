@@ -2,14 +2,15 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { colors, fontDisplay } from '../colors';
 import {
-  buildSummary, curtoPosicao, eventTypesMeta, formatClock, formatMinuto, localPresets, stepsPara, stepTitles,
+  aplicarPasso, curtoPosicao, eventButtons, formatClock, formatMinuto, labelTipo,
+  passoPreenchido, placarDaSessao, resumoEvento, stepsPara, stepTitles,
 } from '../data';
 import { useEventOptions } from '../hooks/useEventOptions';
 import { useApp } from '../store';
 import { StepCardColor, StepGrid, StepList, StepZone } from './OptionPickers';
-import type { EventTypeKey, EventoRegistrado, FlowData, FlowState, Lado, StepName } from '../types';
+import type { EventButton, EventoRegistrado, FlowData, FlowState, Lado, StepName } from '../types';
 
-const emptyFlow: FlowState = { eventType: null, lado: 'nos', stepIndex: 0, data: {} };
+const emptyFlow: FlowState = { botao: null, lado: 'nos', stepIndex: 0, data: {} };
 
 export default function RegistroScreen() {
   const { sessaoId } = useParams();
@@ -41,22 +42,18 @@ export default function RegistroScreen() {
   }, [sessao, state.jogadores]);
 
   const select = useCallback((step: StepName, value: string | number) => {
-    // 'local' carries a preset key but is stored as pitch coordinates, never as a sector index.
-    let data: FlowData;
-    if (step === 'local') {
-      const preset = localPresets.find((p) => p.key === value);
-      data = { ...flow.data, x: preset?.x, y: preset?.y };
-    } else {
-      data = { ...flow.data, [step]: value };
-    }
-
-    const seq = stepsPara(flow.eventType as EventTypeKey, flow.lado);
+    const botao = flow.botao;
+    if (!botao) return;
+    const data = aplicarPasso(flow.data, step, value);
+    // Sequence is recomputed against the NEW data: picking "gol" adds the assist step,
+    // picking anything else drops it.
+    const seq = stepsPara(botao.tipo, flow.lado, data);
     const idx = seq.indexOf(step);
     if (idx === seq.length - 1) {
       // Side effect (dispatch) must happen outside setFlow's updater, never inside it —
       // React may invoke updater functions during render to check purity (esp. under StrictMode).
-      if (flow.editingId) updateEvento(flow.editingId, flow.eventType as EventTypeKey, flow.lado, flow.minuto ?? 0, data);
-      else saveEvento(sessaoId as string, flow.eventType as EventTypeKey, flow.lado, flow.minuto ?? 0, data);
+      if (flow.editingId) updateEvento(flow.editingId, botao.tipo, flow.lado, flow.minuto ?? 0, data);
+      else saveEvento(sessaoId as string, botao.tipo, flow.lado, flow.minuto ?? 0, data);
       setFlow({ ...flow, data, stepIndex: 'saved' });
       return;
     }
@@ -72,14 +69,14 @@ export default function RegistroScreen() {
       const k = e.key.toLowerCase();
       if (k === ' ' && sessao?.comVideo) { e.preventDefault(); setVideoPlaying((p) => !p); return; }
       if (k === 'escape') { goBack(); return; }
-      if (k === 'a' && !flow.eventType) { setLado((l) => (l === 'nos' ? 'adversario' : 'nos')); return; }
-      const map: Record<string, EventTypeKey> = { g: 'gol', c: 'cartao', p: 'passe', x: 'cruzamento', l: 'lancamento' };
-      if (map[k] && !flow.eventType) startType(map[k]);
+      if (k === 'a' && !flow.botao) { setLado((l) => (l === 'nos' ? 'adversario' : 'nos')); return; }
+      const botao = eventButtons.find((b) => b.shortcut.toLowerCase() === k);
+      if (botao && !flow.botao) startBotao(botao);
     }
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [flow.eventType, sessao?.comVideo]);
+  }, [flow.botao, sessao?.comVideo, lado]);
 
   if (!sessao) {
     return (
@@ -90,22 +87,33 @@ export default function RegistroScreen() {
     );
   }
 
-  function startType(key: EventTypeKey) {
+  /** Steps already satisfied by the button's preset are skipped, so "Gol" stays one tap
+   *  away from the same flow "Finalização" opens. */
+  function primeiroPassoPendente(b: EventButton, l: Lado, data: FlowData): number {
+    const seq = stepsPara(b.tipo, l, data);
+    let i = 0;
+    while (i < seq.length && passoPreenchido(seq[i], data)) i++;
+    return Math.min(i, seq.length - 1);
+  }
+
+  function startBotao(b: EventButton) {
+    const data: FlowData = { ...(b.preset ?? {}) };
+    const inicio = primeiroPassoPendente(b, lado, data);
     if (sessao!.comVideo) {
-      setFlow({ eventType: key, lado, stepIndex: 0, data: {}, minuto: Math.floor(videoSeconds / 60) });
+      setFlow({ botao: b, lado, stepIndex: inicio, data, minuto: Math.floor(videoSeconds / 60) });
     } else {
       setMinutoDraft('1');
-      setFlow({ eventType: key, lado, stepIndex: 'minuto', data: {} });
+      setFlow({ botao: b, lado, stepIndex: 'minuto', data });
     }
   }
 
   function confirmMinuto() {
     const m = Math.max(0, Math.min(120, Number(minutoDraft) || 0));
-    setFlow((f) => ({ ...f, stepIndex: 0, minuto: m }));
+    setFlow((f) => ({ ...f, stepIndex: f.botao ? primeiroPassoPendente(f.botao, f.lado, f.data) : 0, minuto: m }));
   }
 
   function goBack() {
-    if (!flow.eventType) return;
+    if (!flow.botao) return;
     if (flow.stepIndex === 'saved' || flow.stepIndex === 'minuto') { setFlow(emptyFlow); return; }
     if (flow.stepIndex === 0) {
       if (!sessao!.comVideo && !flow.editingId) { setFlow((f) => ({ ...f, stepIndex: 'minuto' })); return; }
@@ -116,8 +124,11 @@ export default function RegistroScreen() {
   }
 
   function startEdit(evento: EventoRegistrado) {
+    const botao = eventButtons.find((b) => b.tipo === evento.tipo && !b.preset)
+      ?? eventButtons.find((b) => b.tipo === evento.tipo)!;
     setLado(evento.lado);
-    setFlow({ eventType: evento.tipo, lado: evento.lado, stepIndex: 0, data: evento.data, minuto: evento.minuto, editingId: evento.id });
+    // Editing always starts at step 0 so every field stays reachable.
+    setFlow({ botao, lado: evento.lado, stepIndex: 0, data: evento.data, minuto: evento.minuto, editingId: evento.id });
     setMinutoDraft(String(evento.minuto));
   }
 
@@ -131,14 +142,11 @@ export default function RegistroScreen() {
     dispatch({ type: 'SET_ESCALACAO', sessaoId: sessao!.id, escalacao: nova });
   }
 
-  const seq = flow.eventType ? stepsPara(flow.eventType, flow.lado) : [];
-  const currentStep: StepName | null = flow.stepIndex !== 'saved' && flow.stepIndex !== 'minuto' && flow.eventType
-    ? seq[flow.stepIndex as number] : null;
-  const meta = flow.eventType ? eventTypesMeta.find((m) => m.key === flow.eventType) : null;
-  const eventos = state.eventos
-    .filter((e) => e.sessaoId === sessao.id)
-    .sort((a, b) => b.criadoEm - a.criadoEm);
-
+  const seq = flow.botao ? stepsPara(flow.botao.tipo, flow.lado, flow.data) : [];
+  const currentStep: StepName | null = flow.stepIndex !== 'saved' && flow.stepIndex !== 'minuto' && flow.botao
+    ? seq[flow.stepIndex as number] ?? null : null;
+  const eventos = state.eventos.filter((e) => e.sessaoId === sessao.id).sort((a, b) => b.criadoEm - a.criadoEm);
+  const placar = placarDaSessao(state.eventos, sessao.id);
   const corLado = (l: Lado) => (l === 'nos' ? colors.blue : colors.gold);
 
   return (
@@ -146,13 +154,13 @@ export default function RegistroScreen() {
       <div onClick={() => navigate('/sessoes')} style={{ fontSize: 12, color: colors.muted, cursor: 'pointer' }}>‹ Sessões</div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
         <div style={{ fontSize: 16, fontWeight: 700 }}>{sessao.label}</div>
+        <div style={{ fontFamily: fontDisplay, fontSize: 20, fontWeight: 800 }}>
+          {placar.nos} <span style={{ color: colors.mutedDark }}>—</span> {placar.adversario}
+        </div>
         <div style={{ fontSize: 12, color: colors.mutedDark }}>
           {sessao.tipoSessao === 'partida' ? 'Partida' : 'Treino'} · {sessao.data}{!sessao.comVideo ? ' · registro retroativo' : ''}
         </div>
-        <div
-          onClick={() => setEscalacaoAberta((o) => !o)}
-          style={{ fontSize: 12, color: colors.blue, cursor: 'pointer', fontWeight: 600 }}
-        >
+        <div onClick={() => setEscalacaoAberta((o) => !o)} style={{ fontSize: 12, color: colors.blue, cursor: 'pointer', fontWeight: 600 }}>
           Escalação: {sessao.escalacao.length} {escalacaoAberta ? '▲' : '▼'}
         </div>
       </div>
@@ -162,16 +170,12 @@ export default function RegistroScreen() {
           {state.jogadores.filter((j) => j.ativo).map((j) => {
             const escalado = sessao.escalacao.includes(j.id);
             return (
-              <div
-                key={j.id}
-                onClick={() => toggleEscalado(j.id)}
-                style={{
-                  padding: '8px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                  background: escalado ? colors.blueSofter : colors.chipBg,
-                  border: `1px solid ${escalado ? colors.blue : colors.chipBorder}`,
-                  color: escalado ? colors.text : colors.muted,
-                }}
-              >
+              <div key={j.id} onClick={() => toggleEscalado(j.id)} style={{
+                padding: '8px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                background: escalado ? colors.blueSofter : colors.chipBg,
+                border: `1px solid ${escalado ? colors.blue : colors.chipBorder}`,
+                color: escalado ? colors.text : colors.muted,
+              }}>
                 {j.numero !== undefined ? `${j.numero} · ` : ''}{j.nome}
                 <span style={{ color: colors.mutedDark, marginLeft: 6, fontSize: 11 }}>{curtoPosicao(j.posicao)}</span>
               </div>
@@ -213,28 +217,22 @@ export default function RegistroScreen() {
 
         <div className="registro-shortcuts">
           <div style={{ fontSize: 12, fontWeight: 700, color: colors.muted, marginBottom: 2 }}>ATALHOS</div>
-          {eventTypesMeta.map((et) => (
-            <div key={et.key} onClick={() => startType(et.key)} style={{
+          {eventButtons.map((b) => (
+            <div key={b.key} onClick={() => startBotao(b)} style={{
               display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: colors.cardBgDense,
               border: `1px solid ${colors.borderAlt}`, borderRadius: 10, cursor: 'pointer',
             }}>
               <div style={{
                 width: 26, height: 26, borderRadius: 6, background: colors.chipBg, border: `1px solid ${colors.borderStrong}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: colors.blue,
-              }}>{et.shortcut}</div>
-              <div style={{ fontSize: 13, fontWeight: 600 }}>{et.label}</div>
+              }}>{b.shortcut}</div>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>{b.label}</div>
             </div>
           ))}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', marginTop: 2, color: colors.mutedDark, fontSize: 12 }}>
             <div style={{ width: 26, height: 26, borderRadius: 6, background: colors.cardBgDense, border: `1px solid ${colors.borderAlt}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>A</div>
             <div>Alternar time</div>
           </div>
-          {sessao.comVideo && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', color: colors.mutedDark, fontSize: 12 }}>
-              <div style={{ width: 26, height: 26, borderRadius: 6, background: colors.cardBgDense, border: `1px solid ${colors.borderAlt}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>␣</div>
-              <div>Play / Pause</div>
-            </div>
-          )}
         </div>
       </div>
 
@@ -242,28 +240,24 @@ export default function RegistroScreen() {
         <div className="registro-capture">
           <div className="registro-grabber" />
 
-          {!flow.eventType && (
+          {!flow.botao && (
             <>
               <div style={{ display: 'flex', gap: 8 }}>
                 {(['nos', 'adversario'] as Lado[]).map((l) => (
-                  <div
-                    key={l}
-                    onClick={() => setLado(l)}
-                    style={{
-                      flex: 1, padding: '10px 12px', borderRadius: 10, textAlign: 'center', cursor: 'pointer',
-                      fontSize: 13, fontWeight: 700,
-                      background: lado === l ? (l === 'nos' ? colors.blueSofter : colors.goldSoft) : colors.chipBg,
-                      border: `1px solid ${lado === l ? corLado(l) : colors.chipBorder}`,
-                      color: lado === l ? colors.text : colors.muted,
-                    }}
-                  >
+                  <div key={l} onClick={() => setLado(l)} style={{
+                    flex: 1, padding: '10px 12px', borderRadius: 10, textAlign: 'center', cursor: 'pointer',
+                    fontSize: 13, fontWeight: 700,
+                    background: lado === l ? (l === 'nos' ? colors.blueSofter : colors.goldSoft) : colors.chipBg,
+                    border: `1px solid ${lado === l ? corLado(l) : colors.chipBorder}`,
+                    color: lado === l ? colors.text : colors.muted,
+                  }}>
                     {l === 'nos' ? state.config.nomeTime : 'Adversário'}
                   </div>
                 ))}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-                {eventTypesMeta.map((et) => (
-                  <div key={et.key} onClick={() => startType(et.key)} style={{
+                {eventButtons.map((b) => (
+                  <div key={b.key} onClick={() => startBotao(b)} style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '16px 8px',
                     background: colors.chipBg, border: `1px solid ${colors.chipBorder}`, borderRadius: 14, cursor: 'pointer',
                     minHeight: 88, justifyContent: 'center',
@@ -271,33 +265,27 @@ export default function RegistroScreen() {
                     <div style={{
                       width: 34, height: 34, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 11, fontWeight: 800,
-                      background: lado === 'nos' ? colors.blueSoft : colors.goldSoft,
-                      color: corLado(lado),
-                    }}>{et.mono}</div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: colors.text }}>{et.label}</div>
+                      background: lado === 'nos' ? colors.blueSoft : colors.goldSoft, color: corLado(lado),
+                    }}>{b.mono}</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: colors.text, textAlign: 'center' }}>{b.label}</div>
                   </div>
                 ))}
               </div>
             </>
           )}
 
-          {flow.eventType && flow.stepIndex === 'minuto' && (
+          {flow.botao && flow.stepIndex === 'minuto' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div onClick={goBack} style={{ fontSize: 13, color: colors.muted, cursor: 'pointer' }}>‹ Voltar</div>
-                <div style={{ fontSize: 13, fontWeight: 700 }}>{meta?.label}</div>
+                <div style={{ fontSize: 13, fontWeight: 700 }}>{flow.botao.label}</div>
                 <div style={{ fontSize: 11, fontWeight: 700, color: corLado(flow.lado) }}>
                   {flow.lado === 'nos' ? state.config.nomeTime : 'Adversário'}
                 </div>
               </div>
               <div style={{ fontSize: 12, color: colors.muted, fontWeight: 600 }}>MINUTO DO EVENTO</div>
               <input
-                type="number"
-                className="minuto-input"
-                value={minutoDraft}
-                min={0}
-                max={120}
-                autoFocus
+                type="number" className="minuto-input" value={minutoDraft} min={0} max={120} autoFocus
                 onChange={(e) => setMinutoDraft(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') confirmMinuto(); }}
               />
@@ -307,16 +295,16 @@ export default function RegistroScreen() {
             </div>
           )}
 
-          {flow.eventType && currentStep && (
+          {flow.botao && currentStep && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div onClick={goBack} style={{ fontSize: 13, color: colors.muted, cursor: 'pointer' }}>‹ Voltar</div>
                 <div style={{ fontSize: 13, fontWeight: 700 }}>
-                  {meta?.label}{flow.minuto !== undefined ? ` · ${formatMinuto(flow.minuto)}` : ''}{flow.editingId ? ' (editando)' : ''}
+                  {flow.botao.label}{flow.minuto !== undefined ? ` · ${formatMinuto(flow.minuto)}` : ''}{flow.editingId ? ' (editando)' : ''}
                 </div>
                 <div style={{ fontSize: 12, color: colors.mutedDark }}>{seq.indexOf(currentStep) + 1} / {seq.length}</div>
               </div>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: -6 }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: -6, flexWrap: 'wrap' }}>
                 <div style={{ fontSize: 12, color: colors.muted, fontWeight: 600 }}>{stepTitles[currentStep]}</div>
                 <div style={{
                   fontSize: 10, fontWeight: 800, padding: '2px 6px', borderRadius: 4,
@@ -326,6 +314,7 @@ export default function RegistroScreen() {
                 </div>
               </div>
               {currentStep === 'local' && <StepZone items={options.localItems} />}
+              {currentStep === 'resultadoFin' && <StepGrid items={options.resultadoFinItems} />}
               {currentStep === 'detail' && <StepGrid items={options.detailItems} />}
               {currentStep === 'origin' && <StepGrid items={options.originItems} />}
               {currentStep === 'scorer' && <StepList items={options.scorerItems} />}
@@ -336,14 +325,18 @@ export default function RegistroScreen() {
             </div>
           )}
 
-          {flow.eventType && flow.stepIndex === 'saved' && (
+          {flow.botao && flow.stepIndex === 'saved' && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '10px 0', animation: 'popIn 220ms ease-out' }}>
               <div style={{ width: 44, height: 44, borderRadius: '50%', background: flow.lado === 'nos' ? colors.blueSoft : colors.goldSoft, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <div style={{ width: 18, height: 10, borderLeft: `3px solid ${corLado(flow.lado)}`, borderBottom: `3px solid ${corLado(flow.lado)}`, transform: 'rotate(-45deg) translate(2px,-2px)' }} />
               </div>
               <div style={{ fontSize: 15, fontWeight: 700 }}>{flow.editingId ? 'Alterações salvas' : 'Salvo'}</div>
               <div style={{ fontSize: 13, color: colors.muted, textAlign: 'center' }}>
-                {flow.minuto !== undefined ? `${formatMinuto(flow.minuto)} · ` : ''}{buildSummary(flow.eventType, flow.data, flow.lado)}
+                {flow.minuto !== undefined ? `${formatMinuto(flow.minuto)} · ` : ''}
+                {resumoEvento(
+                  { id: '', sessaoId: '', tipo: flow.botao.tipo, lado: flow.lado, minuto: flow.minuto ?? 0, data: flow.data, criadoEm: 0 },
+                  state.jogadores,
+                )}
               </div>
               <div onClick={() => setFlow(emptyFlow)} style={{ marginTop: 4, padding: '12px 24px', background: colors.blue, color: '#0a0e13', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
                 Novo registro
@@ -363,7 +356,7 @@ export default function RegistroScreen() {
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: colors.mutedDark, marginBottom: 4, gap: 8 }}>
                     <span>
-                      {eventTypesMeta.find((m) => m.key === e.tipo)?.label} · {formatMinuto(e.minuto)}
+                      {labelTipo(e.tipo)} · {formatMinuto(e.minuto)}
                       <span style={{ color: corLado(e.lado), fontWeight: 700, marginLeft: 6 }}>
                         {e.lado === 'nos' ? state.config.nomeTime : 'Adversário'}
                       </span>
@@ -373,7 +366,7 @@ export default function RegistroScreen() {
                       <span onClick={() => removeEvento(e.id)} style={{ cursor: 'pointer', color: colors.gold }}>excluir</span>
                     </span>
                   </div>
-                  <div style={{ fontSize: 12, color: colors.mutedLight }}>{e.summary}</div>
+                  <div style={{ fontSize: 12, color: colors.mutedLight }}>{resumoEvento(e, state.jogadores)}</div>
                 </div>
               ))}
             </div>

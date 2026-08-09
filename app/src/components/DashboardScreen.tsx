@@ -33,6 +33,12 @@ export default function DashboardScreen() {
           <div style={{ fontFamily: fontDisplay, fontSize: 26, fontWeight: 800, marginLeft: 10, color: colors.gold }}>{d.golsContra}</div>
           <div style={{ fontSize: 12, color: colors.mutedDark }}>sofridos</div>
         </div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, paddingLeft: 16, borderLeft: `1px solid ${colors.border}` }}>
+          <div style={{ fontFamily: fontDisplay, fontSize: 26, fontWeight: 800 }}>{d.aproveitamento}%</div>
+          <div style={{ fontSize: 12, color: colors.mutedDark }}>
+            aproveitamento · {d.golsDoLado}/{d.finalizacoes} finalizações
+          </div>
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
@@ -59,11 +65,11 @@ export default function DashboardScreen() {
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <select
-                value={state.dashPlayer}
-                onChange={(e) => dispatch({ type: 'SET_DASH_PLAYER', player: e.target.value })}
+                value={state.dashPlayerId}
+                onChange={(e) => dispatch({ type: 'SET_DASH_PLAYER', playerId: e.target.value })}
                 style={{ background: colors.chipBg, color: colors.text, border: `1px solid ${colors.borderStrong}`, borderRadius: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600 }}
               >
-                {ativos.map((p) => <option key={p.id} value={p.nome}>{p.nome}</option>)}
+                {ativos.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
               </select>
               <select
                 value={state.dashSessao}
