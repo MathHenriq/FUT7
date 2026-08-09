@@ -2,12 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { colors, fontDisplay } from '../colors';
 import {
-  aplicarPasso, curtoPosicao, eventButtons, formatClock, formatMinuto, labelTipo,
+  aplicarPasso, curtoPosicao, eventButtons, formatClock, formatMinuto, labelTipo, linhasDaGrade,
   passoPreenchido, placarDaSessao, resumoEvento, stepsPara, stepTitles,
 } from '../data';
 import { useEventOptions } from '../hooks/useEventOptions';
 import { useApp } from '../store';
-import { StepCardColor, StepGrid, StepList, StepZone } from './OptionPickers';
+import CampoSeletor from './CampoSeletor';
+import { StepCardColor, StepGrid, StepList } from './OptionPickers';
 import type { EventButton, EventoRegistrado, FlowData, FlowState, Lado, StepName } from '../types';
 
 const emptyFlow: FlowState = { botao: null, lado: 'nos', stepIndex: 0, data: {} };
@@ -41,10 +42,9 @@ export default function RegistroScreen() {
     return escalados.length > 0 ? escalados : state.jogadores.filter((j) => j.ativo);
   }, [sessao, state.jogadores]);
 
-  const select = useCallback((step: StepName, value: string | number) => {
+  const avancar = useCallback((step: StepName, data: FlowData) => {
     const botao = flow.botao;
     if (!botao) return;
-    const data = aplicarPasso(flow.data, step, value);
     // Sequence is recomputed against the NEW data: picking "gol" adds the assist step,
     // picking anything else drops it.
     const seq = stepsPara(botao.tipo, flow.lado, data);
@@ -59,6 +59,18 @@ export default function RegistroScreen() {
     }
     setFlow({ ...flow, data, stepIndex: idx + 1 });
   }, [flow, saveEvento, updateEvento, sessaoId]);
+
+  const select = useCallback(
+    (step: StepName, value: string | number) => avancar(step, aplicarPasso(flow.data, step, value)),
+    [avancar, flow.data],
+  );
+
+  const pickCoord = useCallback((step: StepName, x: number, y: number) => {
+    const data: FlowData = step === 'localFim'
+      ? { ...flow.data, x2: x, y2: y }
+      : { ...flow.data, x, y };
+    avancar(step, data);
+  }, [avancar, flow.data]);
 
   const options = useEventOptions(flow.data, jogadoresDaSessao, select);
 
@@ -313,8 +325,23 @@ export default function RegistroScreen() {
                   {flow.lado === 'nos' ? state.config.nomeTime.toUpperCase() : 'ADVERSÁRIO'}
                 </div>
               </div>
-              {currentStep === 'local' && <StepZone items={options.localItems} />}
-              {currentStep === 'localFim' && <StepZone items={options.localFimItems} />}
+              {currentStep === 'local' && (
+                <CampoSeletor
+                  cols={3}
+                  rows={linhasDaGrade(state.config.gradeZonas)}
+                  valor={flow.data.x !== undefined ? { x: flow.data.x, y: flow.data.y as number } : undefined}
+                  onPick={(x, y) => pickCoord('local', x, y)}
+                />
+              )}
+              {currentStep === 'localFim' && (
+                <CampoSeletor
+                  cols={3}
+                  rows={linhasDaGrade(state.config.gradeZonas)}
+                  origem={flow.data.x !== undefined ? { x: flow.data.x, y: flow.data.y as number } : undefined}
+                  valor={flow.data.x2 !== undefined ? { x: flow.data.x2, y: flow.data.y2 as number } : undefined}
+                  onPick={(x, y) => pickCoord('localFim', x, y)}
+                />
+              )}
               {currentStep === 'resultadoFin' && <StepGrid items={options.resultadoFinItems} />}
               {currentStep === 'detail' && <StepGrid items={options.detailItems} />}
               {currentStep === 'origin' && <StepGrid items={options.originItems} />}

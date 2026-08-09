@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import {
   cardColors, comoPerdeuOptions, comoRecuperouOptions, detailOptions, faltaTipoOptions,
-  localPresets, originOptions, resultadoFinOptions, resultadoOptions,
+  originOptions, resultadoFinOptions, resultadoOptions,
 } from '../data';
 import type { FlowData, Jogador, StepName } from '../types';
 import type { FlowOption } from '../components/OptionPickers';
@@ -15,20 +15,6 @@ export function useEventOptions(
     // The keeper stays eligible to score and to assist: on a small pitch a punt that
     // launches the counter is a routine assist, and keeper goals do happen.
     const ativos = jogadores.filter((j) => j.ativo);
-
-    const localItems: FlowOption[] = localPresets.map((p) => ({
-      key: p.key,
-      label: p.label,
-      selected: data.x === p.x && data.y === p.y,
-      onClick: () => select('local', p.key),
-    }));
-
-    const localFimItems: FlowOption[] = localPresets.map((p) => ({
-      key: p.key,
-      label: p.label,
-      selected: data.x2 === p.x && data.y2 === p.y,
-      onClick: () => select('localFim', p.key),
-    }));
 
     const resultadoFinItems: FlowOption[] = resultadoFinOptions.map((r) => ({
       key: r.key,
@@ -89,7 +75,7 @@ export function useEventOptions(
     }));
 
     return {
-      localItems, localFimItems, resultadoFinItems, detailItems, originItems,
+      resultadoFinItems, detailItems, originItems,
       scorerItems, assistItems, goleiroItems, cardColorItems, playerItems, resultadoItems,
       comoPerdeuItems, comoRecuperouItems, faltaTipoItems,
     };

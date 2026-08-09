@@ -461,6 +461,8 @@ export function seedSessoesEEventos(jogadores: Jogador[]): { sessoes: Sessao[]; 
         { tipo: 'recuperacao', extra: () => ({ comoRecuperou: comoRecuperouOptions[Math.floor(rand() * comoRecuperouOptions.length)].key }) },
         { tipo: 'falta', extra: () => ({ faltaTipo: faltaTipoOptions[Math.floor(rand() * faltaTipoOptions.length)].key }) },
         { tipo: 'passe', extra: () => ({ resultado: rand() < 0.75 ? 'certo' : 'errado' }) },
+        { tipo: 'lancamento', extra: () => ({ resultado: rand() < 0.5 ? 'certo' : 'errado' }) },
+        { tipo: 'cruzamento', extra: () => ({ resultado: rand() < 0.45 ? 'certo' : 'errado' }) },
       ];
       for (const { tipo, extra } of bloco) {
         const quantos = Math.floor(rand() * 2.4);

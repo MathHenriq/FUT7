@@ -7,22 +7,6 @@ export interface FlowOption {
   onClick: () => void;
 }
 
-export function StepZone({ items }: { items: FlowOption[] }) {
-  return (
-    <div className="opt-zone-grid">
-      {items.map((item) => (
-        <div
-          key={item.key}
-          onClick={item.onClick}
-          className={`opt-zone-cell${item.selected ? ' selected' : ''}`}
-        >
-          {item.label}
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export function StepGrid({ items }: { items: FlowOption[] }) {
   return (
     <div className="opt-grid2">

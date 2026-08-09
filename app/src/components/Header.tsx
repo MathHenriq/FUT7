@@ -24,6 +24,7 @@ export default function Header() {
   const tabs = [
     { key: 'sessoes', label: 'Sessões', active: location.pathname.startsWith('/sessoes'), onClick: () => navigate('/sessoes') },
     { key: 'registro', label: 'Registro', active: location.pathname.startsWith('/registro'), onClick: goRegistro },
+    { key: 'campo', label: 'Campo', active: location.pathname.startsWith('/campo'), onClick: () => navigate('/campo') },
     { key: 'elenco', label: 'Elenco', active: location.pathname.startsWith('/elenco'), onClick: () => navigate('/elenco') },
     { key: 'dashboard', label: 'Dashboard', active: location.pathname.startsWith('/dashboard'), onClick: () => navigate('/dashboard') },
   ];
@@ -42,7 +43,7 @@ export default function Header() {
           FUT7 <span style={{ color: colors.muted, fontWeight: 600 }}>ANALYTICS</span>
         </div>
       </div>
-      <div style={{ display: 'flex', gap: 4 }}>
+      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
         {tabs.map((t) => (
           <div
             key={t.key}

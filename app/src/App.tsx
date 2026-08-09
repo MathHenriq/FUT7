@@ -3,6 +3,7 @@ import Header from './components/Header';
 import SessoesScreen from './components/SessoesScreen';
 import RegistroScreen from './components/RegistroScreen';
 import ElencoScreen from './components/ElencoScreen';
+import CampoScreen from './components/CampoScreen';
 import DashboardScreen from './components/DashboardScreen';
 import { AppProvider } from './store';
 
@@ -22,6 +23,7 @@ export default function App() {
             <Route path="/sessoes" element={<SessoesScreen />} />
             <Route path="/registro/:sessaoId" element={<RegistroRoute />} />
             <Route path="/elenco" element={<ElencoScreen />} />
+            <Route path="/campo" element={<CampoScreen />} />
             <Route path="/dashboard" element={<DashboardScreen />} />
             <Route path="*" element={<Navigate to="/sessoes" replace />} />
           </Routes>
