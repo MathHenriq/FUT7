@@ -8,6 +8,7 @@ import {
 import { useEventOptions } from '../hooks/useEventOptions';
 import { useApp } from '../store';
 import CampoSeletor from './CampoSeletor';
+import VideoPlayer, { type MarcadorVideo } from './VideoPlayer';
 import { StepCardColor, StepGrid, StepList } from './OptionPickers';
 import type { EventButton, EventoRegistrado, FlowData, FlowState, Lado, StepName } from '../types';
 
@@ -25,16 +26,19 @@ export default function RegistroScreen() {
 
   const [flow, setFlow] = useState<FlowState>(emptyFlow);
   const [lado, setLado] = useState<Lado>('nos');
-  const [videoSeconds, setVideoSeconds] = useState(0);
-  const [videoPlaying, setVideoPlaying] = useState(false);
   const [minutoDraft, setMinutoDraft] = useState('1');
   const [escalacaoAberta, setEscalacaoAberta] = useState(false);
+  const [videoSegundo, setVideoSegundo] = useState(0);
+  const [relogio, setRelogio] = useState(0);
+  const [relogioAtivo, setRelogioAtivo] = useState(false);
+
+  const ehVideo = sessao?.modoRegistro === 'video';
 
   useEffect(() => {
-    if (!videoPlaying) return;
-    const id = setInterval(() => setVideoSeconds((s) => s + 1), 1000);
+    if (!relogioAtivo) return;
+    const id = setInterval(() => setRelogio((s) => s + 1), 1000);
     return () => clearInterval(id);
-  }, [videoPlaying]);
+  }, [relogioAtivo]);
 
   const jogadoresDaSessao = useMemo(() => {
     if (!sessao) return [];
@@ -42,23 +46,33 @@ export default function RegistroScreen() {
     return escalados.length > 0 ? escalados : state.jogadores.filter((j) => j.ativo);
   }, [sessao, state.jogadores]);
 
+  /** Match minute derived from where we are in the tape, once kickoff is marked. */
+  const minutoDoVideo = useCallback(() => {
+    const off = sessao?.videoOffsetSegundos ?? 0;
+    return Math.max(0, Math.floor((videoSegundo - off) / 60));
+  }, [sessao?.videoOffsetSegundos, videoSegundo]);
+
   const avancar = useCallback((step: StepName, data: FlowData) => {
     const botao = flow.botao;
     if (!botao) return;
-    // Sequence is recomputed against the NEW data: picking "gol" adds the assist step,
-    // picking anything else drops it.
     const seq = stepsPara(botao.tipo, flow.lado, data);
     const idx = seq.indexOf(step);
     if (idx === seq.length - 1) {
       // Side effect (dispatch) must happen outside setFlow's updater, never inside it —
       // React may invoke updater functions during render to check purity (esp. under StrictMode).
-      if (flow.editingId) updateEvento(flow.editingId, botao.tipo, flow.lado, flow.minuto ?? 0, data);
-      else saveEvento(sessaoId as string, botao.tipo, flow.lado, flow.minuto ?? 0, data);
+      if (flow.editingId) {
+        updateEvento(flow.editingId, botao.tipo, flow.lado, flow.minuto ?? 0, data);
+      } else {
+        saveEvento(sessaoId as string, botao.tipo, flow.lado, flow.minuto ?? 0, data, {
+          origem: ehVideo ? 'manual' : 'ao-vivo',
+          videoSegundo: ehVideo ? videoSegundo : undefined,
+        });
+      }
       setFlow({ ...flow, data, stepIndex: 'saved' });
       return;
     }
     setFlow({ ...flow, data, stepIndex: idx + 1 });
-  }, [flow, saveEvento, updateEvento, sessaoId]);
+  }, [flow, saveEvento, updateEvento, sessaoId, ehVideo, videoSegundo]);
 
   const select = useCallback(
     (step: StepName, value: string | number) => avancar(step, aplicarPasso(flow.data, step, value)),
@@ -79,7 +93,6 @@ export default function RegistroScreen() {
       const tag = (e.target as HTMLElement)?.tagName || '';
       if (tag === 'SELECT' || tag === 'INPUT' || tag === 'TEXTAREA') return;
       const k = e.key.toLowerCase();
-      if (k === ' ' && sessao?.comVideo) { e.preventDefault(); setVideoPlaying((p) => !p); return; }
       if (k === 'escape') { goBack(); return; }
       if (k === 'a' && !flow.botao) { setLado((l) => (l === 'nos' ? 'adversario' : 'nos')); return; }
       const botao = eventButtons.find((b) => b.shortcut.toLowerCase() === k);
@@ -88,7 +101,7 @@ export default function RegistroScreen() {
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [flow.botao, sessao?.comVideo, lado]);
+  }, [flow.botao, lado, videoSegundo, sessao?.videoOffsetSegundos, relogio]);
 
   if (!sessao) {
     return (
@@ -99,8 +112,6 @@ export default function RegistroScreen() {
     );
   }
 
-  /** Steps already satisfied by the button's preset are skipped, so "Gol" stays one tap
-   *  away from the same flow "Finalização" opens. */
   function primeiroPassoPendente(b: EventButton, l: Lado, data: FlowData): number {
     const seq = stepsPara(b.tipo, l, data);
     let i = 0;
@@ -111,10 +122,11 @@ export default function RegistroScreen() {
   function startBotao(b: EventButton) {
     const data: FlowData = { ...(b.preset ?? {}) };
     const inicio = primeiroPassoPendente(b, lado, data);
-    if (sessao!.comVideo) {
-      setFlow({ botao: b, lado, stepIndex: inicio, data, minuto: Math.floor(videoSeconds / 60) });
+    if (ehVideo) {
+      // The tape already knows when this happened; no reason to ask.
+      setFlow({ botao: b, lado, stepIndex: inicio, data, minuto: minutoDoVideo() });
     } else {
-      setMinutoDraft('1');
+      setMinutoDraft(String(Math.floor(relogio / 60)));
       setFlow({ botao: b, lado, stepIndex: 'minuto', data });
     }
   }
@@ -128,7 +140,7 @@ export default function RegistroScreen() {
     if (!flow.botao) return;
     if (flow.stepIndex === 'saved' || flow.stepIndex === 'minuto') { setFlow(emptyFlow); return; }
     if (flow.stepIndex === 0) {
-      if (!sessao!.comVideo && !flow.editingId) { setFlow((f) => ({ ...f, stepIndex: 'minuto' })); return; }
+      if (!ehVideo && !flow.editingId) { setFlow((f) => ({ ...f, stepIndex: 'minuto' })); return; }
       setFlow(emptyFlow);
       return;
     }
@@ -139,7 +151,6 @@ export default function RegistroScreen() {
     const botao = eventButtons.find((b) => b.tipo === evento.tipo && !b.preset)
       ?? eventButtons.find((b) => b.tipo === evento.tipo)!;
     setLado(evento.lado);
-    // Editing always starts at step 0 so every field stays reachable.
     setFlow({ botao, lado: evento.lado, stepIndex: 0, data: evento.data, minuto: evento.minuto, editingId: evento.id });
     setMinutoDraft(String(evento.minuto));
   }
@@ -161,6 +172,17 @@ export default function RegistroScreen() {
   const placar = placarDaSessao(state.eventos, sessao.id);
   const corLado = (l: Lado) => (l === 'nos' ? colors.blue : colors.gold);
 
+  const marcadores: MarcadorVideo[] = eventos
+    .filter((e) => e.videoSegundo !== undefined)
+    .map((e) => ({
+      id: e.id,
+      segundo: e.videoSegundo as number,
+      cor: corLado(e.lado),
+      titulo: `${labelTipo(e.tipo)} · ${formatMinuto(e.minuto)}`,
+    }));
+
+  const apitoMarcado = sessao.videoOffsetSegundos !== undefined;
+
   return (
     <div className="registro-page">
       <div onClick={() => navigate('/sessoes')} style={{ fontSize: 12, color: colors.muted, cursor: 'pointer' }}>‹ Sessões</div>
@@ -169,8 +191,14 @@ export default function RegistroScreen() {
         <div style={{ fontFamily: fontDisplay, fontSize: 20, fontWeight: 800 }}>
           {placar.nos} <span style={{ color: colors.mutedDark }}>—</span> {placar.adversario}
         </div>
+        <div style={{
+          fontSize: 10, fontWeight: 800, padding: '3px 7px', borderRadius: 5,
+          background: ehVideo ? colors.goldSoft : colors.blueSoft, color: ehVideo ? colors.gold : colors.blue,
+        }}>
+          {ehVideo ? 'VÍDEO' : 'AO VIVO'}
+        </div>
         <div style={{ fontSize: 12, color: colors.mutedDark }}>
-          {sessao.tipoSessao === 'partida' ? 'Partida' : 'Treino'} · {sessao.data}{!sessao.comVideo ? ' · registro retroativo' : ''}
+          {sessao.tipoSessao === 'partida' ? 'Partida' : 'Treino'} · {sessao.data}
         </div>
         <div onClick={() => setEscalacaoAberta((o) => !o)} style={{ fontSize: 12, color: colors.blue, cursor: 'pointer', fontWeight: 600 }}>
           Escalação: {sessao.escalacao.length} {escalacaoAberta ? '▲' : '▼'}
@@ -202,27 +230,67 @@ export default function RegistroScreen() {
       )}
 
       <div className="registro-top">
-        {sessao.comVideo && (
-          <div className="registro-video-col">
-            <div className="registro-video">
-              <div style={{ position: 'absolute', top: 16, left: 20, fontSize: 13, fontWeight: 700, color: colors.muted }}>CÂMERA PRINCIPAL</div>
-              <div onClick={() => setVideoPlaying((p) => !p)} style={{
-                width: 64, height: 64, borderRadius: '50%', background: 'rgba(255,255,255,0.08)',
-                border: '1px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+        {ehVideo ? (
+          <div className="registro-video-col" style={{ border: 'none', background: 'none' }}>
+            <VideoPlayer
+              sessaoId={sessao.id}
+              metaSalva={sessao.video}
+              marcadores={marcadores}
+              onMetaChange={(v) => dispatch({ type: 'SET_VIDEO_META', sessaoId: sessao.id, video: v })}
+              onTempo={setVideoSegundo}
+            />
+            {sessao.video && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, flexWrap: 'wrap',
+                fontSize: 12, color: colors.mutedDark,
               }}>
-                <div style={{ width: 0, height: 0, borderLeft: '20px solid #eef2f6', borderTop: '13px solid transparent', borderBottom: '13px solid transparent', marginLeft: 4 }} />
+                <div
+                  onClick={() => dispatch({ type: 'SET_VIDEO_OFFSET', sessaoId: sessao.id, segundos: videoSegundo })}
+                  style={{
+                    padding: '7px 12px', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 12,
+                    background: apitoMarcado ? colors.chipBg : colors.blueSofter,
+                    border: `1px solid ${apitoMarcado ? colors.chipBorder : colors.blue}`,
+                    color: apitoMarcado ? colors.muted : colors.text,
+                  }}
+                >
+                  {apitoMarcado ? 'Remarcar apito inicial' : 'Marcar apito inicial'}
+                </div>
+                {apitoMarcado ? (
+                  <span>
+                    Apito em {formatClock(sessao.videoOffsetSegundos as number)} · o lance atual é{' '}
+                    <strong style={{ color: colors.text }}>{formatMinuto(minutoDoVideo())}</strong> de jogo
+                  </span>
+                ) : (
+                  <span>Leve o vídeo até o apito inicial e marque, para o minuto de jogo sair certo.</span>
+                )}
               </div>
+            )}
+          </div>
+        ) : (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px',
+            background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 14, flexWrap: 'wrap',
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: colors.muted, letterSpacing: 0.4 }}>CRONÔMETRO</div>
+            <div style={{ fontFamily: fontDisplay, fontSize: 30, fontWeight: 800, letterSpacing: 1, minWidth: 84 }}>
+              {formatClock(relogio)}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 18px', borderTop: `1px solid ${colors.border}` }}>
-              <div onClick={() => setVideoPlaying((p) => !p)} style={{ fontSize: 13, fontWeight: 700, color: colors.blue, cursor: 'pointer', width: 70 }}>
-                {videoPlaying ? 'Pausar' : 'Reproduzir'}
-              </div>
-              <div style={{ flex: 1, height: 4, background: colors.borderAlt, borderRadius: 2 }}>
-                <div style={{ width: `${Math.min(100, (videoSeconds / 600) * 100)}%`, height: '100%', background: colors.blue, borderRadius: 2 }} />
-              </div>
-              <div style={{ fontFamily: fontDisplay, fontSize: 15, fontWeight: 700, letterSpacing: 0.5, minWidth: 60, textAlign: 'right' }}>
-                {formatClock(videoSeconds)}
-              </div>
+            <div onClick={() => setRelogioAtivo((r) => !r)} style={{
+              padding: '8px 16px', borderRadius: 8, fontWeight: 700, fontSize: 12, cursor: 'pointer',
+              background: relogioAtivo ? colors.chipBg : colors.blue,
+              border: `1px solid ${relogioAtivo ? colors.chipBorder : colors.blue}`,
+              color: relogioAtivo ? colors.text : '#0a0e13',
+            }}>
+              {relogioAtivo ? 'Pausar' : 'Iniciar'}
+            </div>
+            <div onClick={() => { setRelogio(0); setRelogioAtivo(false); }} style={{
+              padding: '8px 14px', borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: 'pointer',
+              background: colors.chipBg, border: `1px solid ${colors.chipBorder}`, color: colors.muted,
+            }}>
+              Zerar
+            </div>
+            <div style={{ fontSize: 11, color: colors.mutedDark }}>
+              O minuto do evento já vem preenchido daqui — dá pra corrigir na hora.
             </div>
           </div>
         )}
@@ -366,7 +434,10 @@ export default function RegistroScreen() {
               <div style={{ fontSize: 13, color: colors.muted, textAlign: 'center' }}>
                 {flow.minuto !== undefined ? `${formatMinuto(flow.minuto)} · ` : ''}
                 {resumoEvento(
-                  { id: '', sessaoId: '', tipo: flow.botao.tipo, lado: flow.lado, minuto: flow.minuto ?? 0, data: flow.data, criadoEm: 0 },
+                  {
+                    id: '', sessaoId: '', tipo: flow.botao.tipo, lado: flow.lado, minuto: flow.minuto ?? 0,
+                    origem: ehVideo ? 'manual' : 'ao-vivo', data: flow.data, criadoEm: 0,
+                  },
                   state.jogadores,
                 )}
               </div>
@@ -378,7 +449,9 @@ export default function RegistroScreen() {
         </div>
 
         <div className="registro-log">
-          <div style={{ fontSize: 12, fontWeight: 700, color: colors.muted, letterSpacing: 0.4, marginBottom: 10 }}>EVENTOS DA SESSÃO</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: colors.muted, letterSpacing: 0.4, marginBottom: 10 }}>
+            EVENTOS DA SESSÃO <span style={{ color: colors.mutedDark }}>({eventos.length})</span>
+          </div>
           {eventos.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {eventos.map((e) => (
@@ -392,6 +465,9 @@ export default function RegistroScreen() {
                       <span style={{ color: corLado(e.lado), fontWeight: 700, marginLeft: 6 }}>
                         {e.lado === 'nos' ? state.config.nomeTime : 'Adversário'}
                       </span>
+                      {e.origem === 'ia' && (
+                        <span style={{ marginLeft: 6, color: colors.gold, fontWeight: 700 }}>IA</span>
+                      )}
                     </span>
                     <span style={{ display: 'flex', gap: 10 }}>
                       <span onClick={() => startEdit(e)} style={{ cursor: 'pointer', color: colors.blue }}>editar</span>

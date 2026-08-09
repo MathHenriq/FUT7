@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { colors, fontDisplay } from '../colors';
 import { curtoPosicao, placarDaSessao } from '../data';
 import { useApp } from '../store';
-import type { TipoSessao } from '../types';
+import type { ModoRegistro, TipoSessao } from '../types';
 
 export default function SessoesScreen() {
   const { state, createSessao } = useApp();
@@ -14,7 +14,7 @@ export default function SessoesScreen() {
   const [tipoSessao, setTipoSessao] = useState<TipoSessao>('partida');
   const [label, setLabel] = useState('');
   const [data, setData] = useState(() => new Date().toISOString().slice(0, 10));
-  const [comVideo, setComVideo] = useState(true);
+  const [modoRegistro, setModoRegistro] = useState<ModoRegistro>('ao-vivo');
   const [escalacao, setEscalacao] = useState<string[]>(() => ativos.map((j) => j.id));
 
   const sessoes = [...state.sessoes].sort((a, b) => b.createdAt - a.createdAt);
@@ -26,7 +26,7 @@ export default function SessoesScreen() {
 
   function handleCreate() {
     const finalLabel = label.trim() || (tipoSessao === 'partida' ? 'Partida sem nome' : 'Treino sem nome');
-    const id = createSessao({ tipoSessao, label: finalLabel, comVideo, data, escalacao });
+    const id = createSessao({ tipoSessao, label: finalLabel, modoRegistro, data, escalacao });
     navigate(`/registro/${id}`);
   }
 
@@ -74,16 +74,36 @@ export default function SessoesScreen() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: 10 }}>
-            {[{ v: true, l: 'Com vídeo (ao vivo)' }, { v: false, l: 'Sem vídeo (retroativo)' }].map((o) => (
-              <div key={String(o.v)} onClick={() => setComVideo(o.v)} style={{
-                padding: '10px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                background: comVideo === o.v ? colors.blueSofter : colors.chipBg,
-                border: `1px solid ${comVideo === o.v ? colors.blue : colors.chipBorder}`,
-              }}>
-                {o.l}
-              </div>
-            ))}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <label style={{ fontSize: 11, color: colors.muted, fontWeight: 600 }}>COMO VAI REGISTRAR</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(190px,1fr))', gap: 10 }}>
+              {([
+                { v: 'ao-vivo' as ModoRegistro, l: 'Ao vivo', d: 'Na beira do campo, marcando pelo cronômetro da partida.', pronto: true },
+                { v: 'video' as ModoRegistro, l: 'Vídeo (retroativo)', d: 'Sobe a gravação e marca depois, com o vídeo na tela.', pronto: true },
+                { v: 'ia' as ModoRegistro, l: 'IA assistente', d: 'A IA propõe os lances da gravação e você confirma.', pronto: false },
+              ]).map((o) => (
+                <div
+                  key={o.v}
+                  onClick={() => { if (o.pronto) setModoRegistro(o.v); }}
+                  style={{
+                    padding: '12px 14px', borderRadius: 10, cursor: o.pronto ? 'pointer' : 'not-allowed',
+                    background: modoRegistro === o.v ? colors.blueSofter : colors.chipBg,
+                    border: `1px solid ${modoRegistro === o.v ? colors.blue : colors.chipBorder}`,
+                    opacity: o.pronto ? 1 : 0.45,
+                  }}
+                >
+                  <div style={{ fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {o.l}
+                    {!o.pronto && (
+                      <span style={{ fontSize: 9, fontWeight: 800, padding: '2px 5px', borderRadius: 4, background: colors.goldSoft, color: colors.gold }}>
+                        EM BREVE
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 11, color: colors.mutedDark, marginTop: 4, lineHeight: 1.35 }}>{o.d}</div>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -145,7 +165,9 @@ export default function SessoesScreen() {
               return <div style={{ fontFamily: fontDisplay, fontSize: 16, fontWeight: 800 }}>{p.nos} — {p.adversario}</div>;
             })()}
             <div style={{ fontSize: 12, color: colors.mutedDark, minWidth: 90 }}>{s.data}</div>
-            <div style={{ fontSize: 12, color: colors.mutedDark }}>{s.comVideo ? 'com vídeo' : 'retroativo'}</div>
+            <div style={{ fontSize: 12, color: colors.mutedDark }}>
+              {s.modoRegistro === 'video' ? (s.video ? 'vídeo anexado' : 'vídeo pendente') : s.modoRegistro === 'ia' ? 'IA' : 'ao vivo'}
+            </div>
             <div style={{ fontSize: 12, color: colors.mutedDark }}>{s.escalacao.length} jogadores</div>
             <div style={{ fontSize: 12, color: colors.muted }}>{eventosPorSessao(s.id)} eventos</div>
           </div>

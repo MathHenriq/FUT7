@@ -408,7 +408,7 @@ export function seedSessoesEEventos(jogadores: Jogador[]): { sessoes: Sessao[]; 
       tipoSessao: 'partida' as TipoSessao,
       data: d.toISOString().slice(0, 10),
       label: `vs ${op}`,
-      comVideo: false,
+      modoRegistro: 'ao-vivo' as const,
       escalacao: jogadores.map((j) => j.id),
       createdAt: d.getTime(),
     };
@@ -444,6 +444,7 @@ export function seedSessoesEEventos(jogadores: Jogador[]): { sessoes: Sessao[]; 
           sessaoId: sessao.id,
           tipo: 'finalizacao',
           lado: 'nos',
+          origem: 'manual',
           minuto,
           data,
           criadoEm: sessao.createdAt + minuto * 60000,
@@ -475,6 +476,7 @@ export function seedSessoesEEventos(jogadores: Jogador[]): { sessoes: Sessao[]; 
             sessaoId: sessao.id,
             tipo,
             lado: 'nos',
+            origem: 'manual',
             minuto,
             data: {
               x: de.x, y: de.y, playerId: jog.id,
@@ -499,6 +501,7 @@ export function seedSessoesEEventos(jogadores: Jogador[]): { sessoes: Sessao[]; 
         sessaoId: sessao.id,
         tipo: 'finalizacao',
         lado: 'adversario' as Lado,
+        origem: 'manual',
         minuto,
         data: {
           x: preset.x,

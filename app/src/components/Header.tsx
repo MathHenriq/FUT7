@@ -14,7 +14,7 @@ export default function Header() {
     const id = createSessao({
       tipoSessao: 'partida',
       label: 'Sessão ao vivo',
-      comVideo: true,
+      modoRegistro: 'ao-vivo',
       data: today,
       escalacao: state.jogadores.filter((j) => j.ativo).map((j) => j.id),
     });

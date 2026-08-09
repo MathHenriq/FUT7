@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useReducer, type ReactNode } from 'react';
 import type {
-  Config, EventTypeKey, EventoRegistrado, FlowData, GradeZonas, Jogador, Lado, Sessao, TipoSessao,
+  Config, EventTypeKey, EventoRegistrado, FlowData, GradeZonas, Jogador, Lado, ModoRegistro,
+  OrigemEvento, Sessao, TipoSessao,
 } from './types';
 import { criarElencoInicial, seedSessoesEEventos } from './data';
 
@@ -118,6 +119,7 @@ function migrarV3(parsed: Loose): AppState {
       tipo: (eraGol ? 'finalizacao' : tipoAntigo) as EventTypeKey,
       lado: (e.lado === 'adversario' ? 'adversario' : 'nos') as Lado,
       minuto: Number(e.minuto ?? 0),
+      origem: 'manual' as OrigemEvento,
       data,
       criadoEm: Number(e.criadoEm ?? Date.now()),
     };
@@ -128,7 +130,7 @@ function migrarV3(parsed: Loose): AppState {
     tipoSessao: (s.tipoSessao as TipoSessao) ?? 'partida',
     data: String(s.data ?? new Date().toISOString().slice(0, 10)),
     label: String(s.label ?? 'Sessão'),
-    comVideo: Boolean(s.comVideo),
+    modoRegistro: (s.comVideo ? 'video' : 'ao-vivo') as ModoRegistro,
     escalacao: Array.isArray(s.escalacao) ? (s.escalacao as string[]) : jogadores.map((j) => j.id),
     createdAt: Number(s.createdAt ?? Date.now()),
   }));
@@ -146,19 +148,33 @@ function migrarV3(parsed: Loose): AppState {
   };
 }
 
+/** v4 stored `comVideo: boolean` and had no provenance. Both are filled in on load
+ *  instead of through a version bump, since the shape is otherwise unchanged. */
+function normalizar(st: AppState): AppState {
+  return {
+    ...st,
+    sessoes: st.sessoes.map((s) => {
+      const bruto = s as Sessao & { comVideo?: boolean };
+      const modoRegistro: ModoRegistro = bruto.modoRegistro ?? (bruto.comVideo ? 'video' : 'ao-vivo');
+      return { ...s, modoRegistro };
+    }),
+    eventos: st.eventos.map((e) => ({ ...e, origem: e.origem ?? ('manual' as OrigemEvento) })),
+  };
+}
+
 function loadInitialState(): AppState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && Array.isArray(parsed.jogadores) && Array.isArray(parsed.eventos)) {
-        return { ...estadoSemeado(), ...parsed, config: { ...defaultConfig, ...(parsed.config ?? {}) } };
+        return normalizar({ ...estadoSemeado(), ...parsed, config: { ...defaultConfig, ...(parsed.config ?? {}) } });
       }
     }
     const v3 = localStorage.getItem(LEGACY_V3);
-    if (v3) return migrarV3(JSON.parse(v3));
+    if (v3) return normalizar(migrarV3(JSON.parse(v3)));
     const v2 = localStorage.getItem(LEGACY_V2);
-    if (v2) return migrarV3(migrarV2(JSON.parse(v2)));
+    if (v2) return normalizar(migrarV3(migrarV2(JSON.parse(v2))));
   } catch {
     // corrupt storage falls through to a fresh seed
   }
@@ -169,6 +185,9 @@ type Action =
   | { type: 'CREATE_SESSAO'; sessao: Sessao }
   | { type: 'SET_CURRENT_SESSAO'; id: string | null }
   | { type: 'SET_ESCALACAO'; sessaoId: string; escalacao: string[] }
+  | { type: 'SET_VIDEO_META'; sessaoId: string; video: Sessao['video'] }
+  | { type: 'SET_VIDEO_OFFSET'; sessaoId: string; segundos: number }
+  | { type: 'CONFIRMAR_EVENTO'; id: string }
   | { type: 'ADD_EVENTO'; evento: EventoRegistrado }
   | { type: 'UPDATE_EVENTO'; id: string; tipo: EventTypeKey; lado: Lado; minuto: number; data: FlowData }
   | { type: 'DELETE_EVENTO'; id: string }
@@ -189,6 +208,21 @@ function reducer(state: AppState, action: Action): AppState {
       return {
         ...state,
         sessoes: state.sessoes.map((s) => (s.id === action.sessaoId ? { ...s, escalacao: action.escalacao } : s)),
+      };
+    case 'SET_VIDEO_META':
+      return {
+        ...state,
+        sessoes: state.sessoes.map((s) => (s.id === action.sessaoId ? { ...s, video: action.video } : s)),
+      };
+    case 'SET_VIDEO_OFFSET':
+      return {
+        ...state,
+        sessoes: state.sessoes.map((s) => (s.id === action.sessaoId ? { ...s, videoOffsetSegundos: action.segundos } : s)),
+      };
+    case 'CONFIRMAR_EVENTO':
+      return {
+        ...state,
+        eventos: state.eventos.map((e) => (e.id === action.id ? { ...e, confirmado: true } : e)),
       };
     case 'ADD_EVENTO':
       return { ...state, eventos: [action.evento, ...state.eventos] };
@@ -226,9 +260,12 @@ interface Ctx {
   state: AppState;
   dispatch: React.Dispatch<Action>;
   createSessao: (input: {
-    tipoSessao: TipoSessao; label: string; comVideo: boolean; data: string; escalacao: string[];
+    tipoSessao: TipoSessao; label: string; modoRegistro: ModoRegistro; data: string; escalacao: string[];
   }) => string;
-  saveEvento: (sessaoId: string, tipo: EventTypeKey, lado: Lado, minuto: number, data: FlowData) => void;
+  saveEvento: (
+    sessaoId: string, tipo: EventTypeKey, lado: Lado, minuto: number, data: FlowData,
+    extra?: { origem?: OrigemEvento; videoSegundo?: number },
+  ) => void;
   updateEvento: (id: string, tipo: EventTypeKey, lado: Lado, minuto: number, data: FlowData) => void;
   deleteEvento: (id: string) => void;
   addJogador: (input: { nome: string; numero?: number; posicao: Jogador['posicao'] }) => void;
@@ -258,10 +295,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'CREATE_SESSAO', sessao: { id, createdAt: Date.now(), ...input } });
       return id;
     },
-    saveEvento: (sessaoId, tipo, lado, minuto, data) => {
+    saveEvento: (sessaoId, tipo, lado, minuto, data, extra) => {
       dispatch({
         type: 'ADD_EVENTO',
-        evento: { id: novoId('evt'), sessaoId, tipo, lado, minuto, data, criadoEm: Date.now() },
+        evento: {
+          id: novoId('evt'), sessaoId, tipo, lado, minuto, data,
+          origem: extra?.origem ?? 'manual',
+          videoSegundo: extra?.videoSegundo,
+          criadoEm: Date.now(),
+        },
       });
     },
     updateEvento: (id, tipo, lado, minuto, data) => dispatch({ type: 'UPDATE_EVENTO', id, tipo, lado, minuto, data }),

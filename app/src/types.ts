@@ -5,6 +5,14 @@ export type EventTypeKey =
 /** Which team an event belongs to. Never encoded as a red/green pair in the UI. */
 export type Lado = 'nos' | 'adversario';
 
+/** How a session is tagged. The three modes produce the same events; what differs is
+ *  where the timing comes from and who does the tagging. */
+export type ModoRegistro = 'ao-vivo' | 'video' | 'ia';
+
+/** Provenance of a single event. An AI guess must never be indistinguishable from a
+ *  human call in the statistics. */
+export type OrigemEvento = 'ao-vivo' | 'manual' | 'ia';
+
 export type Posicao = 'goleiro' | 'zagueiro' | 'ala' | 'meia' | 'atacante';
 
 /** A goal is a *result* of a shot, not a separate event type — that is what makes
@@ -72,7 +80,12 @@ export interface Sessao {
   tipoSessao: TipoSessao;
   data: string;
   label: string;
-  comVideo: boolean;
+  modoRegistro: ModoRegistro;
+  /** Present once a video file has been attached (the file lives in IndexedDB). */
+  video?: { nome: string; tamanho: number; tipo: string; salvoEm: number };
+  /** Where kickoff sits inside the recording, in seconds. The tape starts before the
+   *  whistle, so match minute = (videoSegundo - this) / 60. */
+  videoOffsetSegundos?: number;
   /** Jogador ids that took part in this session. */
   escalacao: string[];
   createdAt: number;
@@ -83,7 +96,16 @@ export interface EventoRegistrado {
   sessaoId: string;
   tipo: EventTypeKey;
   lado: Lado;
+  /** Match clock, in minutes. */
   minuto: number;
+  /** Position inside the media file, in seconds. Deliberately separate from `minuto`:
+   *  the recording starts before kickoff and may have the interval cut out. */
+  videoSegundo?: number;
+  origem: OrigemEvento;
+  /** 0..1 for AI suggestions; absent for anything a human tagged. */
+  confianca?: number;
+  /** AI suggestions only count once a human confirms them. */
+  confirmado?: boolean;
   data: FlowData;
   criadoEm: number;
 }
