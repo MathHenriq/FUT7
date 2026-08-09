@@ -1,15 +1,22 @@
 import { useMemo } from 'react';
-import {
-  cardColors, detailOptions, fieldPlayers, originOptions,
-  resultadoOptions, squad, zoneLabels,
-} from '../data';
-import type { FlowData, StepName } from '../types';
+import { cardColors, detailOptions, localPresets, originOptions, resultadoOptions } from '../data';
+import type { FlowData, Jogador, StepName } from '../types';
 import type { FlowOption } from '../components/OptionPickers';
 
-export function useEventOptions(data: FlowData, select: (step: StepName, value: string | number) => void) {
+export function useEventOptions(
+  data: FlowData,
+  jogadores: Jogador[],
+  select: (step: StepName, value: string | number) => void,
+) {
   return useMemo(() => {
-    const zoneItems: FlowOption[] = zoneLabels.map((label, i) => ({
-      key: `z${i}`, label, selected: data.zone === i, onClick: () => select('zone', i),
+    const ativos = jogadores.filter((j) => j.ativo);
+    const linha = ativos.filter((j) => j.posicao !== 'goleiro');
+
+    const localItems: FlowOption[] = localPresets.map((p) => ({
+      key: p.key,
+      label: p.label,
+      selected: data.x === p.x && data.y === p.y,
+      onClick: () => select('local', p.key),
     }));
 
     const detailItems: FlowOption[] = detailOptions.map((d) => ({
@@ -20,13 +27,13 @@ export function useEventOptions(data: FlowData, select: (step: StepName, value: 
       key: o.key, label: o.label, selected: data.origin === o.key, onClick: () => select('origin', o.key),
     }));
 
-    const scorerItems: FlowOption[] = fieldPlayers.map((p) => ({
-      key: p, label: p, selected: data.scorer === p, onClick: () => select('scorer', p),
+    const scorerItems: FlowOption[] = linha.map((p) => ({
+      key: p.id, label: p.nome, selected: data.scorer === p.nome, onClick: () => select('scorer', p.nome),
     }));
 
-    const assistItems: FlowOption[] = fieldPlayers
-      .filter((p) => p !== data.scorer)
-      .map((p): FlowOption => ({ key: p, label: p, selected: data.assist === p, onClick: () => select('assist', p) }))
+    const assistItems: FlowOption[] = linha
+      .filter((p) => p.nome !== data.scorer)
+      .map((p): FlowOption => ({ key: p.id, label: p.nome, selected: data.assist === p.nome, onClick: () => select('assist', p.nome) }))
       .concat([{ key: 'none', label: 'Sem assistência', selected: data.assist === 'none', warn: true, onClick: () => select('assist', 'none') }]);
 
     const cardColorItems: FlowOption[] = cardColors.map((c) => ({
@@ -34,14 +41,14 @@ export function useEventOptions(data: FlowData, select: (step: StepName, value: 
       dot: c.key === 'amarelo' ? '#f2c94c' : '#e15554', onClick: () => select('cardColor', c.key),
     }));
 
-    const playerItems: FlowOption[] = squad.map((p) => ({
-      key: p, label: p, selected: data.player === p, onClick: () => select('player', p),
+    const playerItems: FlowOption[] = ativos.map((p) => ({
+      key: p.id, label: p.nome, selected: data.player === p.nome, onClick: () => select('player', p.nome),
     }));
 
     const resultadoItems: FlowOption[] = resultadoOptions.map((r) => ({
       key: r.key, label: r.label, selected: data.resultado === r.key, warn: r.key === 'errado', onClick: () => select('resultado', r.key),
     }));
 
-    return { zoneItems, detailItems, originItems, scorerItems, assistItems, cardColorItems, playerItems, resultadoItems };
-  }, [data, select]);
+    return { localItems, detailItems, originItems, scorerItems, assistItems, cardColorItems, playerItems, resultadoItems };
+  }, [data, jogadores, select]);
 }

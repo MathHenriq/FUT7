@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-
 import Header from './components/Header';
 import SessoesScreen from './components/SessoesScreen';
 import RegistroScreen from './components/RegistroScreen';
+import ElencoScreen from './components/ElencoScreen';
 import DashboardScreen from './components/DashboardScreen';
 import { AppProvider } from './store';
 
@@ -20,6 +21,7 @@ export default function App() {
             <Route path="/" element={<Navigate to="/sessoes" replace />} />
             <Route path="/sessoes" element={<SessoesScreen />} />
             <Route path="/registro/:sessaoId" element={<RegistroRoute />} />
+            <Route path="/elenco" element={<ElencoScreen />} />
             <Route path="/dashboard" element={<DashboardScreen />} />
             <Route path="*" element={<Navigate to="/sessoes" replace />} />
           </Routes>

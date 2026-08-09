@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useApp } from '../store';
-import { heatColor, originOptions, zoneLabels } from '../data';
+import { heatColor, linhasDaGrade, originOptions, setorIndex, setorLabels } from '../data';
+import type { Lado } from '../types';
 
 const CHART_W = 560;
 const CHART_H = 200;
@@ -8,15 +9,16 @@ const PAD_X = 34;
 const PAD_Y = 22;
 const BASE_MAX_VAL = 4;
 
-export function useDashboardData() {
+export function useDashboardData(lado: Lado) {
   const { state } = useApp();
+  const { gradeZonas } = state.config;
 
   return useMemo(() => {
-    const gols = state.eventos.filter((e) => e.tipo === 'gol');
+    const golsDoLado = state.eventos.filter((e) => e.tipo === 'gol' && e.lado === lado);
 
     const originCounts = originOptions.map((o) => ({
       label: o.label,
-      count: gols.filter((g) => g.data.origin === o.key).length,
+      count: golsDoLado.filter((g) => g.data.origin === o.key).length,
     }));
     const originTotal = originCounts.reduce((a, c) => a + c.count, 0);
     const goalOrigin = originCounts.map((o) => ({
@@ -25,12 +27,24 @@ export function useDashboardData() {
       pct: originTotal > 0 ? Math.round((o.count / originTotal) * 100) : 0,
     }));
 
-    const zoneCounts = zoneLabels.map((_, i) => gols.filter((g) => g.data.zone === i).length);
-    const maxHeat = Math.max(...zoneCounts, 1);
-    const heatCells = zoneCounts.map((v, i) => ({ value: v, label: zoneLabels[i], bg: heatColor(v, maxHeat) }));
+    // Sectors are derived from stored coordinates, so flipping 9 <-> 12 re-buckets
+    // the entire history instead of invalidating it.
+    const labels = setorLabels(gradeZonas);
+    const counts = new Array(labels.length).fill(0) as number[];
+    for (const g of golsDoLado) {
+      if (g.data.x === undefined || g.data.y === undefined) continue;
+      counts[setorIndex(g.data.x, g.data.y, gradeZonas)] += 1;
+    }
+    const maxHeat = Math.max(...counts, 1);
+    const heatCells = counts.map((v, i) => ({ value: v, label: labels[i], bg: heatColor(v, maxHeat) }));
+    const heatRows = linhasDaGrade(gradeZonas);
+    const semLocal = golsDoLado.filter((g) => g.data.x === undefined).length;
 
     const sessoesOrdenadas = [...state.sessoes].sort((a, b) => a.createdAt - b.createdAt);
-    const goalsByMatch = sessoesOrdenadas.map((s) => gols.filter((g) => g.sessaoId === s.id && g.data.scorer === state.dashPlayer).length);
+    const golsNossos = state.eventos.filter((e) => e.tipo === 'gol' && e.lado === 'nos');
+    const goalsByMatch = sessoesOrdenadas.map(
+      (s) => golsNossos.filter((g) => g.sessaoId === s.id && g.data.scorer === state.dashPlayer).length,
+    );
 
     const maxVal = Math.max(BASE_MAX_VAL, ...goalsByMatch);
     const n = goalsByMatch.length;
@@ -52,6 +66,12 @@ export function useDashboardData() {
     const selLabel = state.dashSessao === 'all' ? 'na temporada' : `em ${selSessao?.label ?? ''}`;
     const sessaoOptionsList = sessoesOrdenadas.map((s) => ({ id: s.id, label: s.label }));
 
-    return { goalOrigin, heatCells, chartPath, chartPoints, totalGoalsSel, selLabel, sessaoOptionsList };
-  }, [state.eventos, state.sessoes, state.dashPlayer, state.dashSessao]);
+    const golsPro = state.eventos.filter((e) => e.tipo === 'gol' && e.lado === 'nos').length;
+    const golsContra = state.eventos.filter((e) => e.tipo === 'gol' && e.lado === 'adversario').length;
+
+    return {
+      goalOrigin, heatCells, heatRows, semLocal, chartPath, chartPoints,
+      totalGoalsSel, selLabel, sessaoOptionsList, golsPro, golsContra,
+    };
+  }, [state.eventos, state.sessoes, state.dashPlayer, state.dashSessao, gradeZonas, lado]);
 }

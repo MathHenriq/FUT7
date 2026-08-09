@@ -11,13 +11,20 @@ export default function Header() {
     const current = state.currentSessaoId && state.sessoes.find((s) => s.id === state.currentSessaoId);
     if (current) { navigate(`/registro/${current.id}`); return; }
     const today = new Date().toISOString().slice(0, 10);
-    const id = createSessao({ tipoSessao: 'partida', label: 'Sessão ao vivo', comVideo: true, data: today });
+    const id = createSessao({
+      tipoSessao: 'partida',
+      label: 'Sessão ao vivo',
+      comVideo: true,
+      data: today,
+      escalacao: state.jogadores.filter((j) => j.ativo).map((j) => j.id),
+    });
     navigate(`/registro/${id}`);
   }
 
   const tabs = [
     { key: 'sessoes', label: 'Sessões', active: location.pathname.startsWith('/sessoes'), onClick: () => navigate('/sessoes') },
     { key: 'registro', label: 'Registro', active: location.pathname.startsWith('/registro'), onClick: goRegistro },
+    { key: 'elenco', label: 'Elenco', active: location.pathname.startsWith('/elenco'), onClick: () => navigate('/elenco') },
     { key: 'dashboard', label: 'Dashboard', active: location.pathname.startsWith('/dashboard'), onClick: () => navigate('/dashboard') },
   ];
 
@@ -26,7 +33,7 @@ export default function Header() {
       style={{
         position: 'sticky', top: 0, zIndex: 50, display: 'flex', alignItems: 'center',
         justifyContent: 'space-between', padding: '14px 28px', background: colors.headerBg,
-        borderBottom: `1px solid ${colors.headerBorder}`,
+        borderBottom: `1px solid ${colors.headerBorder}`, flexWrap: 'wrap', gap: 10,
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
