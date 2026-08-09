@@ -10,7 +10,9 @@ export function useEventOptions(
 ) {
   return useMemo(() => {
     const ativos = jogadores.filter((j) => j.ativo);
-    const linha = ativos.filter((j) => j.posicao !== 'goleiro');
+    // The keeper stays eligible to score and to assist: on a small pitch a punt that
+    // launches the counter is a routine assist, and keeper goals do happen.
+    const linha = ativos;
 
     const localItems: FlowOption[] = localPresets.map((p) => ({
       key: p.key,
