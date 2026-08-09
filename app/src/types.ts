@@ -1,4 +1,6 @@
-export type EventTypeKey = 'finalizacao' | 'cartao' | 'passe' | 'cruzamento' | 'lancamento';
+export type EventTypeKey =
+  | 'finalizacao' | 'cartao' | 'passe' | 'cruzamento' | 'lancamento'
+  | 'perda' | 'recuperacao' | 'falta';
 
 /** Which team an event belongs to. Never encoded as a red/green pair in the UI. */
 export type Lado = 'nos' | 'adversario';
@@ -28,8 +30,9 @@ export interface EventButton {
 }
 
 export type StepName =
-  | 'local' | 'resultadoFin' | 'detail' | 'origin' | 'scorer' | 'assist'
-  | 'cardColor' | 'player' | 'resultado';
+  | 'local' | 'localFim' | 'resultadoFin' | 'detail' | 'origin' | 'scorer' | 'assist'
+  | 'cardColor' | 'player' | 'resultado'
+  | 'comoPerdeu' | 'comoRecuperou' | 'faltaTipo' | 'goleiro';
 
 export interface FlowData {
   /** Pitch coordinates, normalized to the FULL pitch: x 0=left touchline .. 1=right,
@@ -37,6 +40,10 @@ export interface FlowData {
    *  derived at read time, so changing the grid never invalidates recorded history. */
   x?: number;
   y?: number;
+  /** Where the ball arrived. Origin + destination is exactly what a drag gesture
+   *  produces, so the future "riscar a trajetória" input fills these two directly. */
+  x2?: number;
+  y2?: number;
   resultadoFin?: ResultadoFin;
   detail?: string;
   origin?: string;
@@ -44,8 +51,13 @@ export interface FlowData {
   scorerId?: string;
   assistId?: string;
   playerId?: string;
+  /** Our keeper, credited on a save even though the shot belongs to the opponent. */
+  goleiroId?: string;
   cardColor?: string;
   resultado?: string;
+  comoPerdeu?: string;
+  comoRecuperou?: string;
+  faltaTipo?: string;
 }
 
 export interface KeyLabel {

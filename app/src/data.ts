@@ -141,12 +141,36 @@ export const resultadoOptions: KeyLabel[] = [
   { key: 'errado', label: 'Errado' },
 ];
 
+export const comoPerdeuOptions: KeyLabel[] = [
+  { key: 'desarmado', label: 'Desarmado' },
+  { key: 'passe-errado', label: 'Passe errado' },
+  { key: 'dominio', label: 'Domínio ruim' },
+  { key: 'dividida', label: 'Dividida perdida' },
+];
+
+export const comoRecuperouOptions: KeyLabel[] = [
+  { key: 'desarme', label: 'Desarme' },
+  { key: 'interceptacao', label: 'Interceptação' },
+  { key: 'roubada', label: 'Roubada' },
+  { key: 'erro-adversario', label: 'Erro do adversário' },
+];
+
+export const faltaTipoOptions: KeyLabel[] = [
+  { key: 'cometida', label: 'Cometida' },
+  { key: 'sofrida', label: 'Sofrida' },
+];
+
+/** E-R-T sit next to each other on the keyboard on purpose: they are the defensive
+ *  cluster, tagged in bursts while the other team has the ball. */
 export const eventButtons: EventButton[] = [
   { key: 'gol', tipo: 'finalizacao', label: 'Gol', mono: 'GOL', shortcut: 'G', preset: { resultadoFin: 'gol' } },
   { key: 'finalizacao', tipo: 'finalizacao', label: 'Finalização', mono: 'FIN', shortcut: 'F' },
   { key: 'passe', tipo: 'passe', label: 'Passe', mono: 'PA', shortcut: 'P' },
   { key: 'cruzamento', tipo: 'cruzamento', label: 'Cruzamento', mono: 'CR', shortcut: 'X' },
   { key: 'lancamento', tipo: 'lancamento', label: 'Lançamento', mono: 'LA', shortcut: 'L' },
+  { key: 'perda', tipo: 'perda', label: 'Perda de bola', mono: 'PER', shortcut: 'E' },
+  { key: 'recuperacao', tipo: 'recuperacao', label: 'Recuperação', mono: 'REC', shortcut: 'R' },
+  { key: 'falta', tipo: 'falta', label: 'Falta', mono: 'FAL', shortcut: 'T' },
   { key: 'cartao', tipo: 'cartao', label: 'Cartão', mono: 'CA', shortcut: 'C' },
 ];
 
@@ -157,7 +181,15 @@ export function labelTipo(tipo: EventTypeKey): string {
     case 'passe': return 'Passe';
     case 'cruzamento': return 'Cruzamento';
     case 'lancamento': return 'Lançamento';
+    case 'perda': return 'Perda de bola';
+    case 'recuperacao': return 'Recuperação';
+    case 'falta': return 'Falta';
   }
+}
+
+/** Events where the ball travels: origin and destination both matter. */
+export function temTrajetoria(tipo: EventTypeKey): boolean {
+  return tipo === 'passe' || tipo === 'cruzamento' || tipo === 'lancamento';
 }
 
 const passosDeJogador: StepName[] = ['scorer', 'assist', 'player'];
@@ -174,15 +206,33 @@ export function stepsPara(tipo: EventTypeKey, lado: Lado, data: FlowData): StepN
     case 'cartao':
       seq = ['cardColor', 'player'];
       break;
+    case 'perda':
+      seq = ['local', 'comoPerdeu', 'player'];
+      break;
+    case 'recuperacao':
+      seq = ['local', 'comoRecuperou', 'player'];
+      break;
+    case 'falta':
+      seq = ['local', 'faltaTipo', 'player'];
+      break;
     default:
-      // Passe / cruzamento / lançamento now record where the ball left from, which is
-      // what makes "de onde saem mais lançamentos" answerable at all.
-      seq = ['local', 'player', 'resultado'];
+      // Passe / cruzamento / lançamento record origin AND destination, which is what
+      // makes trajectory and "de onde saem mais lançamentos" answerable at all.
+      seq = ['local', 'localFim', 'player', 'resultado'];
       break;
   }
-  if (lado === 'nos') return seq;
-  const filtrado = seq.filter((s) => !passosDeJogador.includes(s));
-  return filtrado.length > 0 ? filtrado : [seq[0]];
+
+  if (lado === 'adversario') {
+    const filtrado = seq.filter((s) => !passosDeJogador.includes(s));
+    seq = filtrado.length > 0 ? filtrado : [seq[0]];
+  }
+
+  // Our keeper is ours even when the shot belongs to the opponent, so a save gets
+  // credited without inventing a duplicate "defesa" event.
+  if (tipo === 'finalizacao' && lado === 'adversario' && data.resultadoFin === 'defendida') {
+    seq = [...seq, 'goleiro'];
+  }
+  return seq;
 }
 
 /** Step -> FlowData field mapping lives here so the capture screen never has to know
@@ -193,10 +243,15 @@ export function aplicarPasso(data: FlowData, step: StepName, value: string | num
       const preset = localPresets.find((p) => p.key === value);
       return { ...data, x: preset?.x, y: preset?.y };
     }
+    case 'localFim': {
+      const preset = localPresets.find((p) => p.key === value);
+      return { ...data, x2: preset?.x, y2: preset?.y };
+    }
     case 'resultadoFin': return { ...data, resultadoFin: value as ResultadoFin };
     case 'scorer': return { ...data, scorerId: String(value) };
     case 'assist': return { ...data, assistId: String(value) };
     case 'player': return { ...data, playerId: String(value) };
+    case 'goleiro': return { ...data, goleiroId: String(value) };
     default: return { ...data, [step]: value };
   }
 }
@@ -204,27 +259,37 @@ export function aplicarPasso(data: FlowData, step: StepName, value: string | num
 export function passoPreenchido(step: StepName, data: FlowData): boolean {
   switch (step) {
     case 'local': return data.x !== undefined && data.y !== undefined;
+    case 'localFim': return data.x2 !== undefined && data.y2 !== undefined;
     case 'resultadoFin': return data.resultadoFin !== undefined;
     case 'detail': return data.detail !== undefined;
     case 'origin': return data.origin !== undefined;
     case 'scorer': return data.scorerId !== undefined;
     case 'assist': return data.assistId !== undefined;
+    case 'goleiro': return data.goleiroId !== undefined;
     case 'cardColor': return data.cardColor !== undefined;
     case 'player': return data.playerId !== undefined;
     case 'resultado': return data.resultado !== undefined;
+    case 'comoPerdeu': return data.comoPerdeu !== undefined;
+    case 'comoRecuperou': return data.comoRecuperou !== undefined;
+    case 'faltaTipo': return data.faltaTipo !== undefined;
   }
 }
 
 export const stepTitles: Record<StepName, string> = {
   resultadoFin: 'NO QUE DEU A FINALIZAÇÃO',
   local: 'DE ONDE SAIU',
+  localFim: 'PARA ONDE FOI',
   detail: 'COMO FOI',
   origin: 'ORIGEM DA JOGADA',
   scorer: 'QUEM FINALIZOU',
   assist: 'ASSISTÊNCIA (OPCIONAL)',
+  goleiro: 'QUEM DEFENDEU',
   cardColor: 'TIPO DE CARTÃO',
   player: 'JOGADOR',
   resultado: 'RESULTADO',
+  comoPerdeu: 'COMO PERDEU A BOLA',
+  comoRecuperou: 'COMO RECUPEROU',
+  faltaTipo: 'FALTA COMETIDA OU SOFRIDA',
 };
 
 export function labelFor(list: KeyLabel[], key: string | undefined): string {
@@ -251,6 +316,7 @@ export function resumoEvento(evento: EventoRegistrado, jogadores: Jogador[]): st
         ? `Assist.: ${nomeDe(jogadores, data.assistId)}`
         : 'Sem assistência');
     }
+    if (data.goleiroId) partes.push(`Defesa: ${nomeDe(jogadores, data.goleiroId)}`);
     return partes.join(' · ');
   }
 
@@ -259,11 +325,25 @@ export function resumoEvento(evento: EventoRegistrado, jogadores: Jogador[]): st
       .filter(Boolean).join(' · ');
   }
 
-  return [
-    adversario ? 'Adversário' : nomeDe(jogadores, data.playerId),
-    descreveLocal(data.x, data.y),
-    labelFor(resultadoOptions, data.resultado),
-  ].filter(Boolean).join(' · ');
+  const quem = adversario ? 'Adversário' : nomeDe(jogadores, data.playerId);
+
+  if (tipo === 'perda') {
+    return [quem, labelFor(comoPerdeuOptions, data.comoPerdeu), descreveLocal(data.x, data.y)]
+      .filter(Boolean).join(' · ');
+  }
+  if (tipo === 'recuperacao') {
+    return [quem, labelFor(comoRecuperouOptions, data.comoRecuperou), descreveLocal(data.x, data.y)]
+      .filter(Boolean).join(' · ');
+  }
+  if (tipo === 'falta') {
+    return [quem, `Falta ${labelFor(faltaTipoOptions, data.faltaTipo).toLowerCase()}`, descreveLocal(data.x, data.y)]
+      .filter(Boolean).join(' · ');
+  }
+
+  const trajeto = data.x2 !== undefined
+    ? `${descreveLocal(data.x, data.y)} → ${descreveLocal(data.x2, data.y2)}`
+    : descreveLocal(data.x, data.y);
+  return [quem, trajeto, labelFor(resultadoOptions, data.resultado)].filter(Boolean).join(' · ');
 }
 
 export function ehGol(e: EventoRegistrado): boolean {
@@ -368,6 +448,40 @@ export function seedSessoesEEventos(jogadores: Jogador[]): { sessoes: Sessao[]; 
           data,
           criadoEm: sessao.createdAt + minuto * 60000,
         });
+      }
+    });
+  });
+
+  // Defensive vocabulary and passes with a destination, so the maps have something real.
+  jogadores.forEach((jog, pIdx) => {
+    const rand = seededRand((pIdx + 1) * 6151 + 17);
+    sessoes.forEach((sessao) => {
+      const bloco: { tipo: EventTypeKey; extra: () => Partial<FlowData> }[] = [
+        { tipo: 'perda', extra: () => ({ comoPerdeu: comoPerdeuOptions[Math.floor(rand() * comoPerdeuOptions.length)].key }) },
+        { tipo: 'recuperacao', extra: () => ({ comoRecuperou: comoRecuperouOptions[Math.floor(rand() * comoRecuperouOptions.length)].key }) },
+        { tipo: 'falta', extra: () => ({ faltaTipo: faltaTipoOptions[Math.floor(rand() * faltaTipoOptions.length)].key }) },
+        { tipo: 'passe', extra: () => ({ resultado: rand() < 0.75 ? 'certo' : 'errado' }) },
+      ];
+      for (const { tipo, extra } of bloco) {
+        const quantos = Math.floor(rand() * 2.4);
+        for (let i = 0; i < quantos; i++) {
+          const de = localPresets[Math.floor(rand() * localPresets.length)];
+          const para = localPresets[Math.floor(rand() * localPresets.length)];
+          const minuto = 1 + Math.floor(rand() * 39);
+          eventos.push({
+            id: `seed-${tipo}-${sessao.id}-${pIdx}-${i}`,
+            sessaoId: sessao.id,
+            tipo,
+            lado: 'nos',
+            minuto,
+            data: {
+              x: de.x, y: de.y, playerId: jog.id,
+              ...(temTrajetoria(tipo) ? { x2: para.x, y2: para.y } : {}),
+              ...extra(),
+            },
+            criadoEm: sessao.createdAt + minuto * 60000,
+          });
+        }
       }
     });
   });

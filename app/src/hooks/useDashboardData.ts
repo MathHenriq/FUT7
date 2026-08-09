@@ -74,10 +74,31 @@ export function useDashboardData(lado: Lado) {
     const finalizacoes = finsDoLado.length;
     const aproveitamento = finalizacoes > 0 ? Math.round((golsDoLado.length / finalizacoes) * 100) : 0;
 
+    const doLado = state.eventos.filter((e) => e.lado === lado);
+    const perdas = doLado.filter((e) => e.tipo === 'perda').length;
+    const recuperacoes = doLado.filter((e) => e.tipo === 'recuperacao').length;
+    const faltasCometidas = doLado.filter((e) => e.tipo === 'falta' && e.data.faltaTipo === 'cometida').length;
+    const faltasSofridas = doLado.filter((e) => e.tipo === 'falta' && e.data.faltaTipo === 'sofrida').length;
+
+    // Where we give the ball away — the defensive counterpart of the shot map.
+    const perdaCounts = new Array(labels.length).fill(0) as number[];
+    for (const p of doLado.filter((e) => e.tipo === 'perda')) {
+      if (p.data.x === undefined || p.data.y === undefined) continue;
+      perdaCounts[setorIndex(p.data.x, p.data.y, gradeZonas)] += 1;
+    }
+    const maxPerda = Math.max(...perdaCounts, 1);
+    const perdaCells = perdaCounts.map((v, i) => ({ value: v, label: labels[i], bg: heatColor(v, maxPerda) }));
+
+    const passes = doLado.filter((e) => e.tipo === 'passe');
+    const passesCertos = passes.filter((e) => e.data.resultado === 'certo').length;
+    const precisaoPasse = passes.length > 0 ? Math.round((passesCertos / passes.length) * 100) : 0;
+
     return {
       goalOrigin, heatCells, heatRows, semLocal, chartPath, chartPoints,
       totalGoalsSel, selLabel, sessaoOptionsList, golsPro, golsContra,
       finalizacoes, aproveitamento, golsDoLado: golsDoLado.length,
+      perdas, recuperacoes, faltasCometidas, faltasSofridas, perdaCells,
+      passes: passes.length, precisaoPasse,
     };
   }, [state.eventos, state.sessoes, state.dashPlayerId, state.dashSessao, gradeZonas, lado]);
 }

@@ -314,14 +314,19 @@ export default function RegistroScreen() {
                 </div>
               </div>
               {currentStep === 'local' && <StepZone items={options.localItems} />}
+              {currentStep === 'localFim' && <StepZone items={options.localFimItems} />}
               {currentStep === 'resultadoFin' && <StepGrid items={options.resultadoFinItems} />}
               {currentStep === 'detail' && <StepGrid items={options.detailItems} />}
               {currentStep === 'origin' && <StepGrid items={options.originItems} />}
               {currentStep === 'scorer' && <StepList items={options.scorerItems} />}
               {currentStep === 'assist' && <StepList items={options.assistItems} />}
+              {currentStep === 'goleiro' && <StepList items={options.goleiroItems} />}
               {currentStep === 'cardColor' && <StepCardColor items={options.cardColorItems} />}
               {currentStep === 'player' && <StepList items={options.playerItems} />}
               {currentStep === 'resultado' && <StepGrid items={options.resultadoItems} />}
+              {currentStep === 'comoPerdeu' && <StepGrid items={options.comoPerdeuItems} />}
+              {currentStep === 'comoRecuperou' && <StepGrid items={options.comoRecuperouItems} />}
+              {currentStep === 'faltaTipo' && <StepGrid items={options.faltaTipoItems} />}
             </div>
           )}
 

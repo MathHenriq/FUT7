@@ -7,6 +7,7 @@ import type { GradeZonas, Lado } from '../types';
 export default function DashboardScreen() {
   const { state, dispatch, setGradeZonas } = useApp();
   const [lado, setLado] = useState<Lado>('nos');
+  const [mapa, setMapa] = useState<'gols' | 'perdas'>('gols');
   const d = useDashboardData(lado);
   const ativos = state.jogadores.filter((j) => j.ativo);
 
@@ -39,6 +40,26 @@ export default function DashboardScreen() {
             aproveitamento · {d.golsDoLado}/{d.finalizacoes} finalizações
           </div>
         </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 16 }}>
+        {[
+          { label: 'Recuperações', valor: d.recuperacoes, sub: `${d.perdas} perdas` },
+          { label: 'Saldo de bola', valor: d.recuperacoes - d.perdas, sub: 'recuperadas − perdidas', destaque: true },
+          { label: 'Precisão de passe', valor: `${d.precisaoPasse}%`, sub: `${d.passes} passes` },
+          { label: 'Faltas', valor: d.faltasCometidas, sub: `${d.faltasSofridas} sofridas` },
+        ].map((k) => (
+          <div key={k.label} style={{ background: colors.cardBgDense, border: `1px solid ${colors.borderAlt}`, borderRadius: 12, padding: '14px 16px' }}>
+            <div style={{ fontSize: 11, color: colors.muted, fontWeight: 600, marginBottom: 4 }}>{k.label}</div>
+            <div style={{
+              fontFamily: fontDisplay, fontSize: 26, fontWeight: 800,
+              color: k.destaque ? (Number(k.valor) >= 0 ? colors.blue : colors.gold) : colors.text,
+            }}>
+              {k.destaque && Number(k.valor) > 0 ? '+' : ''}{k.valor}
+            </div>
+            <div style={{ fontSize: 11, color: colors.mutedDark, marginTop: 2 }}>{k.sub}</div>
+          </div>
+        ))}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
@@ -92,9 +113,19 @@ export default function DashboardScreen() {
         <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 14, padding: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>Zona de finalização</div>
+              <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
+                {([['gols', 'Gols'], ['perdas', 'Perdas de bola']] as const).map(([k, l]) => (
+                  <div key={k} onClick={() => setMapa(k)} style={{
+                    fontSize: 12, fontWeight: 700, cursor: 'pointer', padding: '2px 0', marginRight: 10,
+                    color: mapa === k ? colors.text : colors.mutedDark,
+                    borderBottom: `2px solid ${mapa === k ? colors.blue : 'transparent'}`,
+                  }}>
+                    {l}
+                  </div>
+                ))}
+              </div>
               <div style={{ fontSize: 12, color: colors.mutedDark, marginBottom: 14 }}>
-                Gols por setor · {lado === 'nos' ? state.config.nomeTime : 'adversário'}
+                Por setor · {lado === 'nos' ? state.config.nomeTime : 'adversário'}
               </div>
             </div>
             <div style={{ display: 'flex', gap: 4 }}>
@@ -111,7 +142,7 @@ export default function DashboardScreen() {
             </div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 6 }}>
-            {d.heatCells.map((h) => (
+            {(mapa === 'gols' ? d.heatCells : d.perdaCells).map((h) => (
               <div key={h.label} title={h.label} style={{ aspectRatio: '1', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: h.bg }}>
                 <div style={{ fontFamily: fontDisplay, fontSize: 20, fontWeight: 800, color: '#fff' }}>{h.value}</div>
               </div>
