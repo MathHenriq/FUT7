@@ -4,6 +4,57 @@ import { useDashboardData } from '../hooks/useDashboardData';
 import { useApp } from '../store';
 import type { GradeZonas, Lado } from '../types';
 
+/** Physical output lives across sessions, so the readout is a per-player record rather
+ *  than a per-match number. Empty until something is measured — no invented values. */
+function PainelFisico() {
+  const { state } = useApp();
+  const linhas = state.jogadores
+    .filter((j) => j.ativo)
+    .map((j) => {
+      const minhas = state.metricas.filter((m) => m.jogadorId === j.id);
+      const velocidades = minhas.map((m) => m.velocidadeMaxKmh).filter((v): v is number => v !== undefined);
+      const distancias = minhas.map((m) => m.distanciaM).filter((v): v is number => v !== undefined);
+      return {
+        j,
+        recorde: velocidades.length > 0 ? Math.max(...velocidades) : null,
+        distTotal: distancias.length > 0 ? distancias.reduce((a, b) => a + b, 0) : null,
+        sessoes: minhas.length,
+      };
+    })
+    .filter((l) => l.sessoes > 0)
+    .sort((a, b) => (b.recorde ?? 0) - (a.recorde ?? 0));
+
+  return (
+    <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 14, padding: 20 }}>
+      <div style={{ fontSize: 13, fontWeight: 700 }}>Físico</div>
+      <div style={{ fontSize: 12, color: colors.mutedDark, marginTop: 2, marginBottom: 14 }}>
+        Recorde de velocidade e volume acumulado
+      </div>
+      {linhas.length === 0 ? (
+        <div style={{ fontSize: 12, color: colors.mutedDark, lineHeight: 1.5 }}>
+          Nada medido ainda. Abra um treino e preencha o painel Físico — de relógio, GPS do celular
+          no bolso ou cronômetro.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {linhas.map((l) => (
+            <div key={l.j.id} style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: 120, fontSize: 13, fontWeight: 600 }}>{l.j.nome}</div>
+              <div style={{ fontFamily: fontDisplay, fontSize: 20, fontWeight: 800 }}>
+                {l.recorde !== null ? l.recorde.toFixed(1) : '—'}
+                <span style={{ fontSize: 11, color: colors.mutedDark, marginLeft: 3 }}>km/h</span>
+              </div>
+              <div style={{ fontSize: 11, color: colors.mutedDark, minWidth: 90, textAlign: 'right' }}>
+                {l.distTotal !== null ? `${(l.distTotal / 1000).toFixed(1)} km` : '—'} · {l.sessoes} sessão(ões)
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function DashboardScreen() {
   const { state, dispatch, setGradeZonas } = useApp();
   const [lado, setLado] = useState<Lado>('nos');
@@ -75,6 +126,10 @@ export default function DashboardScreen() {
             </div>
           </div>
         ))}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 20 }}>
+        <PainelFisico />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 20 }}>

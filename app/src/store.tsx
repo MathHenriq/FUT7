@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useReducer, type ReactNode } from 'react';
 import type {
-  Config, EventTypeKey, EventoRegistrado, FlowData, GradeZonas, Jogador, Lado, ModoRegistro,
-  OrigemEvento, Sessao, TipoSessao,
+  Config, EventTypeKey, EventoRegistrado, Exercicio, FlowData, GradeZonas, Jogador, Lado,
+  MetricaFisica, ModoRegistro, OrigemEvento, Sessao, TipoExercicio, TipoSessao,
 } from './types';
 import { criarElencoInicial, seedSessoesEEventos } from './data';
 
@@ -13,6 +13,8 @@ interface AppState {
   jogadores: Jogador[];
   sessoes: Sessao[];
   eventos: EventoRegistrado[];
+  exercicios: Exercicio[];
+  metricas: MetricaFisica[];
   config: Config;
   currentSessaoId: string | null;
   dashPlayerId: string;
@@ -28,6 +30,8 @@ function estadoSemeado(): AppState {
     jogadores,
     sessoes,
     eventos,
+    exercicios: [],
+    metricas: [],
     config: defaultConfig,
     currentSessaoId: null,
     dashPlayerId: jogadores[0]?.id ?? '',
@@ -141,6 +145,8 @@ function migrarV3(parsed: Loose): AppState {
     jogadores,
     sessoes: sessoes.length > 0 ? sessoes : base.sessoes,
     eventos: sessoes.length > 0 ? eventos : base.eventos,
+    exercicios: [],
+    metricas: [],
     config: { ...defaultConfig, ...((parsed.config ?? {}) as Partial<Config>) },
     currentSessaoId: (parsed.currentSessaoId as string | null) ?? null,
     dashPlayerId,
@@ -159,6 +165,8 @@ function normalizar(st: AppState): AppState {
       return { ...s, modoRegistro };
     }),
     eventos: st.eventos.map((e) => ({ ...e, origem: e.origem ?? ('manual' as OrigemEvento) })),
+    exercicios: st.exercicios ?? [],
+    metricas: st.metricas ?? [],
   };
 }
 
@@ -188,6 +196,10 @@ type Action =
   | { type: 'SET_VIDEO_META'; sessaoId: string; video: Sessao['video'] }
   | { type: 'SET_VIDEO_OFFSET'; sessaoId: string; segundos: number }
   | { type: 'CONFIRMAR_EVENTO'; id: string }
+  | { type: 'ADD_EXERCICIO'; exercicio: Exercicio }
+  | { type: 'UPDATE_EXERCICIO'; exercicio: Exercicio }
+  | { type: 'DELETE_EXERCICIO'; id: string }
+  | { type: 'SET_METRICA'; metrica: MetricaFisica }
   | { type: 'ADD_EVENTO'; evento: EventoRegistrado }
   | { type: 'UPDATE_EVENTO'; id: string; tipo: EventTypeKey; lado: Lado; minuto: number; data: FlowData }
   | { type: 'DELETE_EVENTO'; id: string }
@@ -235,6 +247,33 @@ function reducer(state: AppState, action: Action): AppState {
       };
     case 'DELETE_EVENTO':
       return { ...state, eventos: state.eventos.filter((e) => e.id !== action.id) };
+    case 'ADD_EXERCICIO':
+      return { ...state, exercicios: [...state.exercicios, action.exercicio] };
+    case 'UPDATE_EXERCICIO':
+      return {
+        ...state,
+        exercicios: state.exercicios.map((x) => (x.id === action.exercicio.id ? action.exercicio : x)),
+      };
+    case 'DELETE_EXERCICIO':
+      // Events keep existing; they just stop belonging to a drill.
+      return {
+        ...state,
+        exercicios: state.exercicios.filter((x) => x.id !== action.id),
+        eventos: state.eventos.map((e) => (e.exercicioId === action.id ? { ...e, exercicioId: undefined } : e)),
+      };
+    case 'SET_METRICA': {
+      const existe = state.metricas.some(
+        (m) => m.sessaoId === action.metrica.sessaoId && m.jogadorId === action.metrica.jogadorId,
+      );
+      return {
+        ...state,
+        metricas: existe
+          ? state.metricas.map((m) => (
+            m.sessaoId === action.metrica.sessaoId && m.jogadorId === action.metrica.jogadorId ? action.metrica : m
+          ))
+          : [...state.metricas, action.metrica],
+      };
+    }
     case 'ADD_JOGADOR':
       return { ...state, jogadores: [...state.jogadores, action.jogador] };
     case 'UPDATE_JOGADOR':
@@ -264,7 +303,7 @@ interface Ctx {
   }) => string;
   saveEvento: (
     sessaoId: string, tipo: EventTypeKey, lado: Lado, minuto: number, data: FlowData,
-    extra?: { origem?: OrigemEvento; videoSegundo?: number },
+    extra?: { origem?: OrigemEvento; videoSegundo?: number; exercicioId?: string },
   ) => void;
   updateEvento: (id: string, tipo: EventTypeKey, lado: Lado, minuto: number, data: FlowData) => void;
   deleteEvento: (id: string) => void;
@@ -272,6 +311,13 @@ interface Ctx {
   updateJogador: (jogador: Jogador) => void;
   deleteJogador: (id: string) => void;
   setGradeZonas: (grade: GradeZonas) => void;
+  addExercicio: (input: { sessaoId: string; nome: string; tipo: TipoExercicio; duracaoMin?: number }) => string;
+  updateExercicio: (exercicio: Exercicio) => void;
+  deleteExercicio: (id: string) => void;
+  setMetrica: (input: {
+    sessaoId: string; jogadorId: string; velocidadeMaxKmh?: number; distanciaM?: number;
+    sprints?: number; origem?: MetricaFisica['origem'];
+  }) => void;
 }
 
 const AppContext = createContext<Ctx | null>(null);
@@ -302,6 +348,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           id: novoId('evt'), sessaoId, tipo, lado, minuto, data,
           origem: extra?.origem ?? 'manual',
           videoSegundo: extra?.videoSegundo,
+          exercicioId: extra?.exercicioId,
           criadoEm: Date.now(),
         },
       });
@@ -312,6 +359,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     updateJogador: (jogador) => dispatch({ type: 'UPDATE_JOGADOR', jogador }),
     deleteJogador: (id) => dispatch({ type: 'DELETE_JOGADOR', id }),
     setGradeZonas: (grade) => dispatch({ type: 'SET_CONFIG', config: { gradeZonas: grade } }),
+    addExercicio: (input) => {
+      const id = novoId('exe');
+      const ordem = state.exercicios.filter((x) => x.sessaoId === input.sessaoId).length;
+      dispatch({ type: 'ADD_EXERCICIO', exercicio: { id, ordem, ...input } });
+      return id;
+    },
+    updateExercicio: (exercicio) => dispatch({ type: 'UPDATE_EXERCICIO', exercicio }),
+    deleteExercicio: (id) => dispatch({ type: 'DELETE_EXERCICIO', id }),
+    setMetrica: (input) => dispatch({
+      type: 'SET_METRICA',
+      metrica: {
+        id: novoId('met'), origem: input.origem ?? 'manual', atualizadoEm: Date.now(), ...input,
+      },
+    }),
   }), [state]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

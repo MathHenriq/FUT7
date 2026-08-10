@@ -9,6 +9,7 @@ import { useEventOptions } from '../hooks/useEventOptions';
 import { useApp } from '../store';
 import CampoSeletor from './CampoSeletor';
 import VideoPlayer, { type MarcadorVideo } from './VideoPlayer';
+import { ExerciciosBar, MetricasFisicas, ResumoExercicios } from './TreinoPainel';
 import { StepCardColor, StepGrid, StepList } from './OptionPickers';
 import type { EventButton, EventoRegistrado, FlowData, FlowState, Lado, StepName } from '../types';
 
@@ -31,8 +32,10 @@ export default function RegistroScreen() {
   const [videoSegundo, setVideoSegundo] = useState(0);
   const [relogio, setRelogio] = useState(0);
   const [relogioAtivo, setRelogioAtivo] = useState(false);
+  const [exercicioAtivo, setExercicioAtivo] = useState<string | null>(null);
 
   const ehVideo = sessao?.modoRegistro === 'video';
+  const ehTreino = sessao?.tipoSessao === 'treino';
 
   useEffect(() => {
     if (!relogioAtivo) return;
@@ -66,13 +69,14 @@ export default function RegistroScreen() {
         saveEvento(sessaoId as string, botao.tipo, flow.lado, flow.minuto ?? 0, data, {
           origem: ehVideo ? 'manual' : 'ao-vivo',
           videoSegundo: ehVideo ? videoSegundo : undefined,
+          exercicioId: exercicioAtivo ?? undefined,
         });
       }
       setFlow({ ...flow, data, stepIndex: 'saved' });
       return;
     }
     setFlow({ ...flow, data, stepIndex: idx + 1 });
-  }, [flow, saveEvento, updateEvento, sessaoId, ehVideo, videoSegundo]);
+  }, [flow, saveEvento, updateEvento, sessaoId, ehVideo, videoSegundo, exercicioAtivo]);
 
   const select = useCallback(
     (step: StepName, value: string | number) => avancar(step, aplicarPasso(flow.data, step, value)),
@@ -227,6 +231,10 @@ export default function RegistroScreen() {
             </div>
           )}
         </div>
+      )}
+
+      {ehTreino && (
+        <ExerciciosBar sessaoId={sessao.id} ativoId={exercicioAtivo} onSelecionar={setExercicioAtivo} />
       )}
 
       <div className="registro-top">
@@ -468,6 +476,11 @@ export default function RegistroScreen() {
                       {e.origem === 'ia' && (
                         <span style={{ marginLeft: 6, color: colors.gold, fontWeight: 700 }}>IA</span>
                       )}
+                      {e.exercicioId && (
+                        <span style={{ marginLeft: 6, color: colors.mutedDark }}>
+                          · {state.exercicios.find((x) => x.id === e.exercicioId)?.nome ?? 'exercício'}
+                        </span>
+                      )}
                     </span>
                     <span style={{ display: 'flex', gap: 10 }}>
                       <span onClick={() => startEdit(e)} style={{ cursor: 'pointer', color: colors.blue }}>editar</span>
@@ -483,6 +496,13 @@ export default function RegistroScreen() {
           )}
         </div>
       </div>
+
+      {ehTreino && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 24 }}>
+          <ResumoExercicios sessaoId={sessao.id} />
+          <MetricasFisicas sessaoId={sessao.id} jogadores={jogadoresDaSessao} />
+        </div>
+      )}
     </div>
   );
 }

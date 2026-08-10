@@ -102,12 +102,44 @@ export interface EventoRegistrado {
    *  the recording starts before kickoff and may have the interval cut out. */
   videoSegundo?: number;
   origem: OrigemEvento;
+  /** Which drill this happened in, for training sessions. */
+  exercicioId?: string;
   /** 0..1 for AI suggestions; absent for anything a human tagged. */
   confianca?: number;
   /** AI suggestions only count once a human confirms them. */
   confirmado?: boolean;
   data: FlowData;
   criadoEm: number;
+}
+
+export type TipoExercicio = 'aquecimento' | 'tecnico' | 'tatico' | 'fisico' | 'finalizacao' | 'jogo-treino';
+
+/** A block inside a training session. Events tagged during it carry its id, which is
+ *  what lets "como fomos no 4v4" be answered separately from the session as a whole. */
+export interface Exercicio {
+  id: string;
+  sessaoId: string;
+  nome: string;
+  tipo: TipoExercicio;
+  duracaoMin?: number;
+  ordem: number;
+}
+
+/** Where a physical number came from. A hand-typed guess and a GPS reading must not
+ *  look the same on screen. */
+export type OrigemMetrica = 'manual' | 'gps' | 'video';
+
+/** Physical output is a *measurement over a period*, not a discrete event — so it gets
+ *  its own entity instead of being forced into the event model. */
+export interface MetricaFisica {
+  id: string;
+  sessaoId: string;
+  jogadorId: string;
+  velocidadeMaxKmh?: number;
+  distanciaM?: number;
+  sprints?: number;
+  origem: OrigemMetrica;
+  atualizadoEm: number;
 }
 
 export type GradeZonas = 9 | 12;
