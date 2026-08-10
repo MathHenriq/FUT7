@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { colors, fontDisplay } from '../colors';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { useApp } from '../store';
@@ -8,6 +9,7 @@ import type { GradeZonas, Lado } from '../types';
  *  than a per-match number. Empty until something is measured — no invented values. */
 function PainelFisico() {
   const { state } = useApp();
+  const navigate = useNavigate();
   const linhas = state.jogadores
     .filter((j) => j.ativo)
     .map((j) => {
@@ -39,7 +41,12 @@ function PainelFisico() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {linhas.map((l) => (
             <div key={l.j.id} style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
-              <div style={{ flex: 1, minWidth: 120, fontSize: 13, fontWeight: 600 }}>{l.j.nome}</div>
+              <div
+                onClick={() => navigate(`/jogador/${l.j.id}`)}
+                style={{ flex: 1, minWidth: 120, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+              >
+                {l.j.nome}
+              </div>
               <div style={{ fontFamily: fontDisplay, fontSize: 20, fontWeight: 800 }}>
                 {l.recorde !== null ? l.recorde.toFixed(1) : '—'}
                 <span style={{ fontSize: 11, color: colors.mutedDark, marginLeft: 3 }}>km/h</span>

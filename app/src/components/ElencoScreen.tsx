@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { colors, fontDisplay } from '../colors';
 import { curtoPosicao, posicoes } from '../data';
 import { useApp } from '../store';
@@ -8,6 +9,7 @@ const posicaoVazia: Posicao = 'meia';
 
 export default function ElencoScreen() {
   const { state, addJogador, updateJogador, deleteJogador } = useApp();
+  const navigate = useNavigate();
   const [nome, setNome] = useState('');
   const [numero, setNumero] = useState('');
   const [posicao, setPosicao] = useState<Posicao>(posicaoVazia);
@@ -121,7 +123,13 @@ export default function ElencoScreen() {
             }}>
               {j.numero ?? '—'}
             </div>
-            <div style={{ flex: 1, minWidth: 140, fontSize: 14, fontWeight: 600 }}>{j.nome}</div>
+            <div
+              onClick={() => navigate(`/jogador/${j.id}`)}
+              style={{ flex: 1, minWidth: 140, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+            >
+              {j.nome}
+              <span style={{ color: colors.blue, marginLeft: 8, fontSize: 11, fontWeight: 600 }}>ver perfil ›</span>
+            </div>
             <div style={{
               fontSize: 10, fontWeight: 800, letterSpacing: 0.5, padding: '4px 8px', borderRadius: 6,
               background: colors.blueSoft, color: colors.blue,
