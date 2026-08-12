@@ -115,6 +115,11 @@ export interface Sessao {
   videoOffsetSegundos?: number;
   /** Jogador ids that took part in this session. */
   escalacao: string[];
+  /** Minutes each player was on the pitch. Without it every ranking rewards whoever
+   *  plays most rather than whoever plays best. */
+  minutosPorJogador?: Record<string, number>;
+  /** Session length, used as the default when filling minutes. */
+  duracaoMin?: number;
   createdAt: number;
 }
 

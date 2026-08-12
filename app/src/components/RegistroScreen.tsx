@@ -11,7 +11,7 @@ import CampoSeletor from './CampoSeletor';
 import VideoPlayer, { type MarcadorVideo } from './VideoPlayer';
 import { ExerciciosBar, MetricasFisicas, ResumoExercicios } from './TreinoPainel';
 import { StepCardColor, StepGrid, StepList } from './OptionPickers';
-import type { EventButton, EventoRegistrado, FlowData, FlowState, Lado, StepName } from '../types';
+import type { EventButton, EventTypeKey, EventoRegistrado, FlowData, FlowState, Lado, StepName } from '../types';
 
 const emptyFlow: FlowState = { botao: null, lado: 'nos', stepIndex: 0, data: {} };
 
@@ -33,10 +33,15 @@ export default function RegistroScreen() {
   const [relogio, setRelogio] = useState(0);
   const [relogioAtivo, setRelogioAtivo] = useState(false);
   const [exercicioAtivo, setExercicioAtivo] = useState<string | null>(null);
+  const [modoFoco, setModoFoco] = useState(true);
 
   const ehVideo = sessao?.modoRegistro === 'video';
   const ehTreino = sessao?.tipoSessao === 'treino';
   const ehObservacao = sessao?.tipoSessao === 'observacao';
+  // Only our own squad can be fielded — a scouted player belongs to another club.
+  const elencoProprio = state.jogadores.filter(
+    (j) => j.ativo && j.timeId === (sessao?.timeAId ?? state.config.meuTimeId),
+  );
 
   // Side A/B is positional: in our own sessions A is our club, in an observation it is
   // whichever club the session declared.
@@ -49,6 +54,7 @@ export default function RegistroScreen() {
   const jogadorFoco = sessao?.jogadorFocoId
     ? state.jogadores.find((j) => j.id === sessao.jogadorFocoId)
     : undefined;
+  const focoAtivo = Boolean(jogadorFoco) && modoFoco;
 
   useEffect(() => {
     if (!relogioAtivo) return;
@@ -76,10 +82,18 @@ export default function RegistroScreen() {
     return Math.max(0, Math.floor((videoSegundo - off) / 60));
   }, [sessao?.videoOffsetSegundos, videoSegundo]);
 
+  /** With a focus player the "who" is already answered, so those steps disappear —
+   *  that is where the speed of scouting a single player actually comes from. */
+  const seqDoFluxo = useCallback((tipo: EventTypeKey, l: Lado, data: FlowData): StepName[] => {
+    const base = stepsPara(tipo, l, data);
+    if (!focoAtivo) return base;
+    return base.filter((p) => p !== 'scorer' && p !== 'player');
+  }, [focoAtivo]);
+
   const avancar = useCallback((step: StepName, data: FlowData) => {
     const botao = flow.botao;
     if (!botao) return;
-    const seq = stepsPara(botao.tipo, flow.lado, data);
+    const seq = seqDoFluxo(botao.tipo, flow.lado, data);
     const idx = seq.indexOf(step);
     if (idx === seq.length - 1) {
       // Side effect (dispatch) must happen outside setFlow's updater, never inside it —
@@ -97,7 +111,7 @@ export default function RegistroScreen() {
       return;
     }
     setFlow({ ...flow, data, stepIndex: idx + 1 });
-  }, [flow, saveEvento, updateEvento, sessaoId, ehVideo, videoSegundo, exercicioAtivo]);
+  }, [flow, saveEvento, updateEvento, sessaoId, ehVideo, videoSegundo, exercicioAtivo, seqDoFluxo]);
 
   const select = useCallback(
     (step: StepName, value: string | number) => avancar(step, aplicarPasso(flow.data, step, value)),
@@ -138,7 +152,7 @@ export default function RegistroScreen() {
   }
 
   function primeiroPassoPendente(b: EventButton, l: Lado, data: FlowData): number {
-    const seq = stepsPara(b.tipo, l, data);
+    const seq = seqDoFluxo(b.tipo, l, data);
     let i = 0;
     while (i < seq.length && passoPreenchido(seq[i], data)) i++;
     return Math.min(i, seq.length - 1);
@@ -146,6 +160,10 @@ export default function RegistroScreen() {
 
   function startBotao(b: EventButton) {
     const data: FlowData = { ...(b.preset ?? {}) };
+    if (focoAtivo && jogadorFoco) {
+      data.scorerId = jogadorFoco.id;
+      data.playerId = jogadorFoco.id;
+    }
     const inicio = primeiroPassoPendente(b, lado, data);
     if (ehVideo) {
       // The tape already knows when this happened; no reason to ask.
@@ -190,7 +208,7 @@ export default function RegistroScreen() {
     dispatch({ type: 'SET_ESCALACAO', sessaoId: sessao!.id, escalacao: nova });
   }
 
-  const seq = flow.botao ? stepsPara(flow.botao.tipo, flow.lado, flow.data) : [];
+  const seq = flow.botao ? seqDoFluxo(flow.botao.tipo, flow.lado, flow.data) : [];
   const currentStep: StepName | null = flow.stepIndex !== 'saved' && flow.stepIndex !== 'minuto' && flow.botao
     ? seq[flow.stepIndex as number] ?? null : null;
   const eventos = state.eventos.filter((e) => e.sessaoId === sessao.id).sort((a, b) => b.criadoEm - a.criadoEm);
@@ -231,8 +249,21 @@ export default function RegistroScreen() {
           </div>
         )}
         {jogadorFoco && (
-          <div style={{ fontSize: 12, color: colors.muted }}>
-            foco: <strong style={{ color: colors.text }}>{jogadorFoco.nome}</strong>
+          <div
+            onClick={() => setModoFoco((f) => !f)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer',
+              padding: '4px 10px', borderRadius: 7, fontSize: 12,
+              background: focoAtivo ? colors.blueSofter : colors.chipBg,
+              border: `1px solid ${focoAtivo ? colors.blue : colors.chipBorder}`,
+            }}
+          >
+            <span style={{ color: focoAtivo ? colors.blue : colors.mutedDark, fontWeight: 800, fontSize: 11 }}>
+              {focoAtivo ? '◉' : '○'}
+            </span>
+            <span style={{ color: colors.muted }}>
+              {focoAtivo ? 'Só' : 'Jogo inteiro ·'} <strong style={{ color: colors.text }}>{jogadorFoco.nome}</strong>
+            </span>
           </div>
         )}
         <div style={{ fontSize: 12, color: colors.mutedDark }}>
@@ -246,26 +277,83 @@ export default function RegistroScreen() {
       </div>
 
       {escalacaoAberta && !ehObservacao && (
-        <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 14, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {state.jogadores.filter((j) => j.ativo).map((j) => {
-            const escalado = sessao.escalacao.includes(j.id);
-            return (
-              <div key={j.id} onClick={() => toggleEscalado(j.id)} style={{
-                padding: '8px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                background: escalado ? colors.blueSofter : colors.chipBg,
-                border: `1px solid ${escalado ? colors.blue : colors.chipBorder}`,
-                color: escalado ? colors.text : colors.muted,
-              }}>
-                {j.numero !== undefined ? `${j.numero} · ` : ''}{j.nome}
-                <span style={{ color: colors.mutedDark, marginLeft: 6, fontSize: 11 }}>{curtoPosicao(j.posicao)}</span>
-              </div>
-            );
-          })}
-          {state.jogadores.filter((j) => j.ativo).length === 0 && (
-            <div style={{ fontSize: 13, color: colors.mutedDark }}>
-              Nenhum jogador no elenco. <span onClick={() => navigate('/elenco')} style={{ color: colors.blue, cursor: 'pointer' }}>Cadastrar elenco</span>
+        <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: colors.muted, letterSpacing: 0.4 }}>DURAÇÃO</span>
+            <input
+              type="number"
+              value={sessao.duracaoMin ?? ''}
+              placeholder="40"
+              onChange={(e) => dispatch({
+                type: 'SET_DURACAO', sessaoId: sessao.id, minutos: Number(e.target.value) || 0,
+              })}
+              style={{
+                background: colors.chipBg, color: colors.text, border: `1px solid ${colors.borderStrong}`,
+                borderRadius: 7, padding: '6px 9px', fontSize: 13, width: 74,
+                fontFamily: fontDisplay, fontWeight: 700, textAlign: 'center',
+              }}
+            />
+            <span style={{ fontSize: 11, color: colors.mutedDark }}>min</span>
+            <div
+              onClick={() => {
+                const d = sessao.duracaoMin ?? 40;
+                for (const id of sessao.escalacao) {
+                  dispatch({ type: 'SET_MINUTOS', sessaoId: sessao.id, jogadorId: id, minutos: d });
+                }
+              }}
+              style={{
+                padding: '6px 12px', borderRadius: 7, fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                background: colors.chipBg, border: `1px solid ${colors.chipBorder}`, color: colors.blue,
+              }}
+            >
+              Todos jogaram tudo
             </div>
-          )}
+            <span style={{ fontSize: 11, color: colors.mutedDark }}>
+              Sem minuto preenchido, comparação entre jogadores premia quem joga mais.
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {elencoProprio.map((j) => {
+              const escalado = sessao.escalacao.includes(j.id);
+              const min = sessao.minutosPorJogador?.[j.id];
+              return (
+                <div key={j.id} style={{
+                  padding: '7px 10px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+                  background: escalado ? colors.blueSofter : colors.chipBg,
+                  border: `1px solid ${escalado ? colors.blue : colors.chipBorder}`,
+                  color: escalado ? colors.text : colors.muted,
+                  display: 'flex', alignItems: 'center', gap: 8,
+                }}>
+                  <span onClick={() => toggleEscalado(j.id)} style={{ cursor: 'pointer' }}>
+                    {j.numero !== undefined ? `${j.numero} · ` : ''}{j.nome}
+                    <span style={{ color: colors.mutedDark, marginLeft: 6, fontSize: 11 }}>{curtoPosicao(j.posicao)}</span>
+                  </span>
+                  {escalado && (
+                    <input
+                      type="number"
+                      value={min ?? ''}
+                      placeholder="min"
+                      onChange={(e) => dispatch({
+                        type: 'SET_MINUTOS', sessaoId: sessao.id, jogadorId: j.id,
+                        minutos: e.target.value.trim() === '' ? undefined : Number(e.target.value),
+                      })}
+                      style={{
+                        background: colors.bg, color: colors.text, border: `1px solid ${colors.borderStrong}`,
+                        borderRadius: 5, padding: '3px 5px', fontSize: 12, width: 48,
+                        fontFamily: fontDisplay, fontWeight: 700, textAlign: 'center',
+                      }}
+                    />
+                  )}
+                </div>
+              );
+            })}
+            {elencoProprio.length === 0 && (
+              <div style={{ fontSize: 13, color: colors.mutedDark }}>
+                Nenhum jogador no elenco. <span onClick={() => navigate('/elenco')} style={{ color: colors.blue, cursor: 'pointer' }}>Cadastrar elenco</span>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

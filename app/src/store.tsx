@@ -250,6 +250,8 @@ type Action =
   | { type: 'SET_ESCALACAO'; sessaoId: string; escalacao: string[] }
   | { type: 'SET_VIDEO_META'; sessaoId: string; video: Sessao['video'] }
   | { type: 'SET_VIDEO_OFFSET'; sessaoId: string; segundos: number }
+  | { type: 'SET_MINUTOS'; sessaoId: string; jogadorId: string; minutos: number | undefined }
+  | { type: 'SET_DURACAO'; sessaoId: string; minutos: number }
   | { type: 'CONFIRMAR_EVENTO'; id: string }
   | { type: 'ADD_EXERCICIO'; exercicio: Exercicio }
   | { type: 'UPDATE_EXERCICIO'; exercicio: Exercicio }
@@ -291,6 +293,22 @@ function reducer(state: AppState, action: Action): AppState {
       return {
         ...state,
         sessoes: state.sessoes.map((s) => (s.id === action.sessaoId ? { ...s, videoOffsetSegundos: action.segundos } : s)),
+      };
+    case 'SET_MINUTOS':
+      return {
+        ...state,
+        sessoes: state.sessoes.map((s) => {
+          if (s.id !== action.sessaoId) return s;
+          const atual = { ...(s.minutosPorJogador ?? {}) };
+          if (action.minutos === undefined) delete atual[action.jogadorId];
+          else atual[action.jogadorId] = action.minutos;
+          return { ...s, minutosPorJogador: atual };
+        }),
+      };
+    case 'SET_DURACAO':
+      return {
+        ...state,
+        sessoes: state.sessoes.map((s) => (s.id === action.sessaoId ? { ...s, duracaoMin: action.minutos } : s)),
       };
     case 'CONFIRMAR_EVENTO':
       return {

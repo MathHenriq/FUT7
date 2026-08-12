@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { colors, fontDisplay } from '../colors';
 import { heatColor, labelPosicao, setorIndex, setorLabels } from '../data';
 import GraficoLinha from './GraficoLinha';
-import { metricasDef, useJogadorStats, type MetricaKey } from '../hooks/useJogadorStats';
+import { MINUTOS_REFERENCIA, metricasDef, useJogadorStats, type MetricaKey } from '../hooks/useJogadorStats';
 import { useApp } from '../store';
 
 const destaques: MetricaKey[] = ['gols', 'assistencias', 'conversao', 'precisaoPasse', 'saldoBola', 'velocidadeMax'];
@@ -68,6 +68,7 @@ export default function JogadorScreen() {
           <div style={{ fontSize: 22, fontWeight: 700 }}>{jogador.nome}</div>
           <div style={{ fontSize: 12, color: colors.mutedDark, marginTop: 2 }}>
             {labelPosicao(jogador.posicao)} · {stats.partidas} partida{stats.partidas === 1 ? '' : 's'} · {stats.treinos} treino{stats.treinos === 1 ? '' : 's'}
+            {stats.minutosTotais > 0 && ` · ${stats.minutosTotais} min`}
             {!jogador.ativo && ' · inativo'}
           </div>
         </div>
@@ -86,10 +87,30 @@ export default function JogadorScreen() {
               <div style={{ fontSize: 10, color: colors.mutedDark, marginTop: 2 }}>
                 {d.agregacao === 'soma' ? 'total' : d.agregacao === 'media' ? 'média por sessão' : 'recorde'}
               </div>
+              {(() => {
+                const p40 = stats.porQuarenta(k);
+                if (p40 === null) return null;
+                return (
+                  <div style={{ fontSize: 10, color: colors.blue, marginTop: 3, fontWeight: 600 }}>
+                    {p40.toFixed(p40 < 10 ? 1 : 0)} por {MINUTOS_REFERENCIA} min
+                  </div>
+                );
+              })()}
             </div>
           );
         })}
       </div>
+
+      {stats.sessoesComMinuto === 0 && stats.pontos.length > 0 && (
+        <div style={{
+          background: colors.goldSoft, borderLeft: `3px solid ${colors.gold}`, borderRadius: 8,
+          padding: '12px 16px', fontSize: 12.5, color: colors.mutedLight, lineHeight: 1.5,
+        }}>
+          Nenhum minuto registrado ainda, então não dá para calcular taxa por {MINUTOS_REFERENCIA} minutos —
+          só total. Preencha os minutos na escalação da sessão para poder comparar este jogador com quem
+          jogou menos.
+        </div>
+      )}
 
       <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 14, padding: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
@@ -171,6 +192,7 @@ export default function JogadorScreen() {
                     <th style={{ padding: '5px 8px', fontWeight: 600 }}>Fin.</th>
                     <th style={{ padding: '5px 8px', fontWeight: 600 }}>Saldo</th>
                     <th style={{ padding: '5px 8px', fontWeight: 600 }}>Vel.</th>
+                    <th style={{ padding: '5px 8px', fontWeight: 600 }}>Min</th>
                   </tr>
                 </thead>
                 <tbody style={{ fontVariantNumeric: 'tabular-nums' }}>
@@ -188,6 +210,9 @@ export default function JogadorScreen() {
                       </td>
                       <td style={{ padding: '7px 8px', color: p.valores.velocidadeMax === null ? colors.mutedDark : colors.text }}>
                         {p.valores.velocidadeMax === null ? '—' : p.valores.velocidadeMax.toFixed(1)}
+                      </td>
+                      <td style={{ padding: '7px 8px', color: p.minutos === null ? colors.mutedDark : colors.text }}>
+                        {p.minutos === null ? '—' : p.minutos}
                       </td>
                     </tr>
                   ))}

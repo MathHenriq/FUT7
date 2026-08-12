@@ -37,8 +37,15 @@ export interface PontoSessao {
   label: string;
   data: string;
   tipoSessao: TipoSessao;
+  /** Null when nobody filled it — never assumed, because assuming a full match would
+   *  silently deflate the rate of whoever came off the bench. */
+  minutos: number | null;
   valores: Record<MetricaKey, number | null>;
 }
+
+/** A fut7 half-length reference: totals normalised "per 40" are what make a reserve and
+ *  a starter comparable at all. */
+export const MINUTOS_REFERENCIA = 40;
 
 /** True when the event belongs to this player, whichever role field applies. */
 function doJogador(e: EventoRegistrado, id: string): boolean {
@@ -70,12 +77,14 @@ export function useJogadorStats(jogadorId: string) {
         (e) => e.sessaoId === s.id && e.lado === 'nos' && ehGol(e) && e.data.assistId === jogadorId,
       ).length;
       const met = state.metricas.find((m) => m.sessaoId === s.id && m.jogadorId === jogadorId);
+      const minutos = s.minutosPorJogador?.[jogadorId] ?? null;
 
       return {
         sessaoId: s.id,
         label: s.label,
         data: s.data,
         tipoSessao: s.tipoSessao,
+        minutos,
         valores: {
           gols,
           assistencias,
@@ -92,6 +101,22 @@ export function useJogadorStats(jogadorId: string) {
         },
       };
     });
+
+    const minutosTotais = pontos.reduce((a, p) => a + (p.minutos ?? 0), 0);
+    const sessoesComMinuto = pontos.filter((p) => p.minutos !== null).length;
+
+    /** Per-40 rate, computed only over sessions that actually have a minute recorded —
+     *  mixing measured and unmeasured sessions would understate the rate. */
+    function porQuarenta(key: MetricaKey): number | null {
+      const def = metricasDef.find((m) => m.key === key)!;
+      if (def.agregacao !== 'soma') return null;
+      const comMinuto = pontos.filter((p) => p.minutos !== null && p.minutos > 0);
+      if (comMinuto.length === 0) return null;
+      const total = comMinuto.reduce((a, p) => a + (p.valores[key] ?? 0), 0);
+      const min = comMinuto.reduce((a, p) => a + (p.minutos as number), 0);
+      if (min === 0) return null;
+      return (total / min) * MINUTOS_REFERENCIA;
+    }
 
     function agregar(key: MetricaKey): number | null {
       const def = metricasDef.find((m) => m.key === key)!;
@@ -110,6 +135,9 @@ export function useJogadorStats(jogadorId: string) {
     return {
       pontos,
       agregar,
+      porQuarenta,
+      minutosTotais,
+      sessoesComMinuto,
       finalizacoes,
       sessoesJogadas: pontos.length,
       partidas: pontos.filter((p) => p.tipoSessao === 'partida').length,
