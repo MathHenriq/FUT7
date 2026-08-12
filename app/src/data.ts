@@ -34,8 +34,12 @@ const elencoSeed: { nome: string; numero: number; posicao: Posicao }[] = [
   { nome: 'Caio Ferreira', numero: 1, posicao: 'goleiro' },
 ];
 
+export const MEU_TIME_SEED_ID = 'time-meu';
+
 export function criarElencoInicial(): Jogador[] {
-  return elencoSeed.map((j, i) => ({ id: `jog-seed-${i}`, ativo: true, ...j }));
+  return elencoSeed.map((j, i) => ({
+    id: `jog-seed-${i}`, ativo: true, timeId: MEU_TIME_SEED_ID, vinculo: 'elenco' as const, ...j,
+  }));
 }
 
 export function nomeDe(jogadores: Jogador[], id: string | undefined): string {
@@ -409,6 +413,7 @@ export function seedSessoesEEventos(jogadores: Jogador[]): { sessoes: Sessao[]; 
       data: d.toISOString().slice(0, 10),
       label: `vs ${op}`,
       modoRegistro: 'ao-vivo' as const,
+      timeAId: MEU_TIME_SEED_ID,
       escalacao: jogadores.map((j) => j.id),
       createdAt: d.getTime(),
     };

@@ -39,7 +39,7 @@ export default function JogadorScreen() {
     return (
       <div style={{ padding: 32 }}>
         <div style={{ fontSize: 14, color: colors.muted }}>Jogador não encontrado.</div>
-        <div onClick={() => navigate('/elenco')} style={{ marginTop: 12, color: colors.blue, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>‹ Voltar para o Elenco</div>
+        <div onClick={() => navigate('/elenco')} style={{ marginTop: 12, color: colors.blue, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>‹ Voltar para Jogadores</div>
       </div>
     );
   }
@@ -54,7 +54,7 @@ export default function JogadorScreen() {
 
   return (
     <div style={{ padding: '24px 32px 48px', display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 1180, margin: '0 auto' }}>
-      <div onClick={() => navigate('/elenco')} style={{ fontSize: 12, color: colors.muted, cursor: 'pointer' }}>‹ Elenco</div>
+      <div onClick={() => navigate('/elenco')} style={{ fontSize: 12, color: colors.muted, cursor: 'pointer' }}>‹ Jogadores</div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
         <div style={{

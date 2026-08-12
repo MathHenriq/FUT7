@@ -25,7 +25,7 @@ export default function Header() {
     { key: 'sessoes', label: 'Sessões', active: location.pathname.startsWith('/sessoes'), onClick: () => navigate('/sessoes') },
     { key: 'registro', label: 'Registro', active: location.pathname.startsWith('/registro'), onClick: goRegistro },
     { key: 'campo', label: 'Campo', active: location.pathname.startsWith('/campo'), onClick: () => navigate('/campo') },
-    { key: 'elenco', label: 'Elenco', active: location.pathname.startsWith('/elenco'), onClick: () => navigate('/elenco') },
+    { key: 'elenco', label: 'Jogadores', active: location.pathname.startsWith('/elenco'), onClick: () => navigate('/elenco') },
     { key: 'dashboard', label: 'Dashboard', active: location.pathname.startsWith('/dashboard'), onClick: () => navigate('/dashboard') },
     { key: 'ideias', label: 'Ideias', active: location.pathname.startsWith('/ideias'), onClick: () => navigate('/ideias') },
   ];

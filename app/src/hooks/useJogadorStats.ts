@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useApp } from '../store';
 import { ehGol } from '../data';
-import type { EventoRegistrado } from '../types';
+import type { EventoRegistrado, TipoSessao } from '../types';
 
 export type MetricaKey =
   | 'gols' | 'assistencias' | 'finalizacoes' | 'conversao'
@@ -36,7 +36,7 @@ export interface PontoSessao {
   sessaoId: string;
   label: string;
   data: string;
-  tipoSessao: 'partida' | 'treino';
+  tipoSessao: TipoSessao;
   valores: Record<MetricaKey, number | null>;
 }
 

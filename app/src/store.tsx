@@ -1,16 +1,17 @@
 import { createContext, useContext, useEffect, useMemo, useReducer, type ReactNode } from 'react';
 import type {
   Config, EventTypeKey, EventoRegistrado, Exercicio, FlowData, GradeZonas, Ideia, Jogador, Lado,
-  MetricaFisica, ModoRegistro, OrigemEvento, Sessao, TipoExercicio, TipoSessao,
+  MetricaFisica, ModoRegistro, OrigemEvento, Sessao, Time, TipoExercicio, TipoSessao, VinculoJogador,
 } from './types';
 import { criarElencoInicial, seedSessoesEEventos } from './data';
-import { criarIdeiasIniciais } from './ideias';
+import { criarIdeiasIniciais, fundirIdeias, SEED_IDEIAS_VERSAO } from './ideias';
 
 const STORAGE_KEY = 'fut7-analytics-v4';
 const LEGACY_V3 = 'fut7-analytics-v3';
 const LEGACY_V2 = 'fut7-analytics-v2';
 
 interface AppState {
+  times: Time[];
   jogadores: Jogador[];
   sessoes: Sessao[];
   eventos: EventoRegistrado[];
@@ -23,12 +24,17 @@ interface AppState {
   dashSessao: string;
 }
 
-const defaultConfig: Config = { gradeZonas: 9, nomeTime: 'Meu time' };
+const MEU_TIME_ID = 'time-meu';
+const defaultConfig: Config = {
+  gradeZonas: 9, nomeTime: 'Meu time', meuTimeId: MEU_TIME_ID, ideiasSeedVersao: SEED_IDEIAS_VERSAO,
+};
 
 function estadoSemeado(): AppState {
+  const meuTime: Time = { id: MEU_TIME_ID, nome: 'Meu time', ehMeuTime: true, criadoEm: Date.now() };
   const jogadores = criarElencoInicial();
   const { sessoes, eventos } = seedSessoesEEventos(jogadores);
   return {
+    times: [meuTime],
     jogadores,
     sessoes,
     eventos,
@@ -62,7 +68,10 @@ function migrarV2(parsed: Loose): Loose {
     for (const campo of ['scorer', 'player', 'assist']) {
       const nome = d[campo];
       if (typeof nome === 'string' && nome && nome !== 'none' && !porNome.has(nome)) {
-        const novo: Jogador = { id: `jog-mig-${porNome.size}`, nome, posicao: 'meia', ativo: true };
+        const novo: Jogador = {
+          id: `jog-mig-${porNome.size}`, nome, posicao: 'meia', ativo: true,
+          timeId: MEU_TIME_ID, vinculo: 'elenco',
+        };
         porNome.set(nome, novo);
         jogadores.push(novo);
       }
@@ -98,7 +107,10 @@ function migrarV3(parsed: Loose): AppState {
     if (nome === 'none') return 'none';
     const achado = porNome.get(nome);
     if (achado) return achado.id;
-    const novo: Jogador = { id: `jog-mig-${porNome.size}`, nome, posicao: 'meia', ativo: true };
+    const novo: Jogador = {
+      id: `jog-mig-${porNome.size}`, nome, posicao: 'meia', ativo: true,
+      timeId: MEU_TIME_ID, vinculo: 'elenco',
+    };
     porNome.set(nome, novo);
     jogadores.push(novo);
     return novo.id;
@@ -133,6 +145,7 @@ function migrarV3(parsed: Loose): AppState {
   });
 
   const sessoes: Sessao[] = ((parsed.sessoes ?? []) as Loose[]).map((s) => ({
+    timeAId: MEU_TIME_ID,
     id: String(s.id),
     tipoSessao: (s.tipoSessao as TipoSessao) ?? 'partida',
     data: String(s.data ?? new Date().toISOString().slice(0, 10)),
@@ -145,7 +158,8 @@ function migrarV3(parsed: Loose): AppState {
   const dashPlayerId = porNome.get(String(parsed.dashPlayer ?? ''))?.id ?? jogadores[0]?.id ?? '';
 
   return {
-    jogadores,
+    times: [{ id: MEU_TIME_ID, nome: 'Meu time', ehMeuTime: true, criadoEm: Date.now() }],
+    jogadores: jogadores.map((j) => ({ ...j, timeId: MEU_TIME_ID, vinculo: 'elenco' as VinculoJogador })),
     sessoes: sessoes.length > 0 ? sessoes : base.sessoes,
     eventos: sessoes.length > 0 ? eventos : base.eventos,
     exercicios: [],
@@ -158,20 +172,50 @@ function migrarV3(parsed: Loose): AppState {
   };
 }
 
-/** v4 stored `comVideo: boolean` and had no provenance. Both are filled in on load
- *  instead of through a version bump, since the shape is otherwise unchanged. */
-function normalizar(st: AppState): AppState {
+/** Absence has to survive the seed merge: fields the install never had arrive here as
+ *  undefined, not as the default value, or we cannot tell "never stored" from "stored
+ *  the default" — which is exactly what made the club inherit the wrong name. */
+type EstadoBruto = Omit<AppState, 'times' | 'config'> & {
+  times?: Time[];
+  config?: Partial<Config>;
+};
+
+/** Fills in everything added after v4 without a version bump, since each addition is a
+ *  superset: provenance, the club a player belongs to, and which teams a session is
+ *  between. Our own team is created from the name already in config. */
+function normalizar(st: EstadoBruto): AppState {
+  const meuTimeId = st.config?.meuTimeId ?? MEU_TIME_ID;
+  const versaoAnterior = st.config?.ideiasSeedVersao ?? 0;
+  const times = (st.times && st.times.length > 0)
+    ? st.times
+    : [{ id: meuTimeId, nome: st.config?.nomeTime ?? 'Meu time', ehMeuTime: true, criadoEm: Date.now() }];
+
   return {
     ...st,
+    times,
+    jogadores: st.jogadores.map((j) => ({
+      ...j,
+      timeId: j.timeId ?? meuTimeId,
+      vinculo: j.vinculo ?? ('elenco' as VinculoJogador),
+    })),
+    config: {
+      ...defaultConfig,
+      ...st.config,
+      meuTimeId,
+      ideiasSeedVersao: SEED_IDEIAS_VERSAO,
+    },
     sessoes: st.sessoes.map((s) => {
       const bruto = s as Sessao & { comVideo?: boolean };
       const modoRegistro: ModoRegistro = bruto.modoRegistro ?? (bruto.comVideo ? 'video' : 'ao-vivo');
-      return { ...s, modoRegistro };
+      // Sessions we played get our club as side A; an observation has no side of ours.
+      const timeAId = s.timeAId ?? (s.tipoSessao === 'observacao' ? undefined : meuTimeId);
+      return { ...s, modoRegistro, timeAId };
     }),
     eventos: st.eventos.map((e) => ({ ...e, origem: e.origem ?? ('manual' as OrigemEvento) })),
     exercicios: st.exercicios ?? [],
     metricas: st.metricas ?? [],
-    ideias: st.ideias ?? criarIdeiasIniciais(),
+    // New backlog items reach existing installs; anything the user edited stays put.
+    ideias: fundirIdeias(st.ideias, versaoAnterior),
   };
 }
 
@@ -181,7 +225,13 @@ function loadInitialState(): AppState {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && Array.isArray(parsed.jogadores) && Array.isArray(parsed.eventos)) {
-        return normalizar({ ...estadoSemeado(), ...parsed, config: { ...defaultConfig, ...(parsed.config ?? {}) } });
+        return normalizar({
+          ...estadoSemeado(),
+          ...parsed,
+          // Passed through raw so normalizar can tell "never stored" from "default".
+          times: parsed.times,
+          config: { ...(parsed.config ?? {}) },
+        });
       }
     }
     const v3 = localStorage.getItem(LEGACY_V3);
@@ -205,6 +255,9 @@ type Action =
   | { type: 'UPDATE_EXERCICIO'; exercicio: Exercicio }
   | { type: 'DELETE_EXERCICIO'; id: string }
   | { type: 'SET_METRICA'; metrica: MetricaFisica }
+  | { type: 'ADD_TIME'; time: Time }
+  | { type: 'UPDATE_TIME'; time: Time }
+  | { type: 'DELETE_TIME'; id: string }
   | { type: 'ADD_IDEIA'; ideia: Ideia }
   | { type: 'UPDATE_IDEIA'; ideia: Ideia }
   | { type: 'DELETE_IDEIA'; id: string }
@@ -282,6 +335,18 @@ function reducer(state: AppState, action: Action): AppState {
           : [...state.metricas, action.metrica],
       };
     }
+    case 'ADD_TIME':
+      return { ...state, times: [...state.times, action.time] };
+    case 'UPDATE_TIME':
+      return { ...state, times: state.times.map((t) => (t.id === action.time.id ? action.time : t)) };
+    case 'DELETE_TIME':
+      // Our own club is never removable; players of a removed club go with it.
+      if (state.times.find((t) => t.id === action.id)?.ehMeuTime) return state;
+      return {
+        ...state,
+        times: state.times.filter((t) => t.id !== action.id),
+        jogadores: state.jogadores.filter((j) => j.timeId !== action.id),
+      };
     case 'ADD_IDEIA':
       return { ...state, ideias: [action.ideia, ...state.ideias] };
     case 'UPDATE_IDEIA':
@@ -317,6 +382,7 @@ interface Ctx {
   dispatch: React.Dispatch<Action>;
   createSessao: (input: {
     tipoSessao: TipoSessao; label: string; modoRegistro: ModoRegistro; data: string; escalacao: string[];
+    timeAId?: string; timeBId?: string; jogadorFocoId?: string;
   }) => string;
   saveEvento: (
     sessaoId: string, tipo: EventTypeKey, lado: Lado, minuto: number, data: FlowData,
@@ -324,13 +390,19 @@ interface Ctx {
   ) => void;
   updateEvento: (id: string, tipo: EventTypeKey, lado: Lado, minuto: number, data: FlowData) => void;
   deleteEvento: (id: string) => void;
-  addJogador: (input: { nome: string; numero?: number; posicao: Jogador['posicao'] }) => void;
+  addJogador: (input: {
+    nome: string; numero?: number; posicao: Jogador['posicao'];
+    timeId?: string; vinculo?: VinculoJogador; idade?: number; nota?: string;
+  }) => void;
   updateJogador: (jogador: Jogador) => void;
   deleteJogador: (id: string) => void;
   setGradeZonas: (grade: GradeZonas) => void;
   addExercicio: (input: { sessaoId: string; nome: string; tipo: TipoExercicio; duracaoMin?: number }) => string;
   updateExercicio: (exercicio: Exercicio) => void;
   deleteExercicio: (id: string) => void;
+  addTime: (nome: string) => string;
+  updateTime: (time: Time) => void;
+  deleteTime: (id: string) => void;
   addIdeia: (input: Omit<Ideia, 'id' | 'criadoEm' | 'atualizadoEm'>) => void;
   updateIdeia: (ideia: Ideia) => void;
   deleteIdeia: (id: string) => void;
@@ -375,7 +447,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     },
     updateEvento: (id, tipo, lado, minuto, data) => dispatch({ type: 'UPDATE_EVENTO', id, tipo, lado, minuto, data }),
     deleteEvento: (id) => dispatch({ type: 'DELETE_EVENTO', id }),
-    addJogador: (input) => dispatch({ type: 'ADD_JOGADOR', jogador: { id: novoId('jog'), ativo: true, ...input } }),
+    addJogador: (input) => dispatch({
+      type: 'ADD_JOGADOR',
+      jogador: {
+        id: novoId('jog'), ativo: true,
+        timeId: state.config.meuTimeId ?? MEU_TIME_ID, vinculo: 'elenco' as VinculoJogador,
+        ...input,
+      },
+    }),
     updateJogador: (jogador) => dispatch({ type: 'UPDATE_JOGADOR', jogador }),
     deleteJogador: (id) => dispatch({ type: 'DELETE_JOGADOR', id }),
     setGradeZonas: (grade) => dispatch({ type: 'SET_CONFIG', config: { gradeZonas: grade } }),
@@ -387,6 +466,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     },
     updateExercicio: (exercicio) => dispatch({ type: 'UPDATE_EXERCICIO', exercicio }),
     deleteExercicio: (id) => dispatch({ type: 'DELETE_EXERCICIO', id }),
+    addTime: (nome) => {
+      const id = novoId('time');
+      dispatch({ type: 'ADD_TIME', time: { id, nome, ehMeuTime: false, criadoEm: Date.now() } });
+      return id;
+    },
+    updateTime: (time) => dispatch({ type: 'UPDATE_TIME', time }),
+    deleteTime: (id) => dispatch({ type: 'DELETE_TIME', id }),
     addIdeia: (input) => dispatch({
       type: 'ADD_IDEIA',
       ideia: { id: novoId('ideia'), criadoEm: Date.now(), atualizadoEm: Date.now(), ...input },

@@ -7,6 +7,7 @@ export const areasIdeia: { key: AreaIdeia; label: string; nota: string }[] = [
   { key: 'devolucao', label: 'Devolução', nota: 'Clipe, apresentação, conversa com o time' },
   { key: 'ia', label: 'IA', nota: 'Reconhecimento e sugestão automática' },
   { key: 'fisico', label: 'Físico', nota: 'Velocidade, distância, carga' },
+  { key: 'scouting', label: 'Scouting', nota: 'Observar e comparar jogadores de fora do elenco' },
   { key: 'engajamento', label: 'Engajamento', nota: 'O que faz o elenco abrir o app' },
   { key: 'plataforma', label: 'Plataforma', nota: 'Base técnica, visual, exportação' },
 ];
@@ -34,9 +35,56 @@ export function prioridade(i: Ideia): number {
   return i.impacto / i.esforco;
 }
 
+/** Bumped whenever the seeded backlog gains items, so they reach installs that already
+ *  have a stored list — without touching anything the user edited or moved. */
+export const SEED_IDEIAS_VERSAO = 2;
+
 type Semente = Omit<Ideia, 'id' | 'criadoEm' | 'atualizadoEm'>;
 
 const sementes: Semente[] = [
+  // ---- Fundação de scouting (o pilar novo) -------------------------------------
+  {
+    titulo: 'Times e jogadores fora do elenco',
+    descricao: 'Clube vira entidade, e o nosso é apenas um deles. Sem isso o app não consegue nem representar um jogo profissional, porque tudo hoje assume que existe um "nós". O lado do evento deixa de ser possessivo e vira posicional: a sessão declara quem é o time A e quem é o B. Nos jogos do nosso time A continua sendo ele, então o histórico migra sem tocar em nada.',
+    area: 'scouting', status: 'fazendo', impacto: 3, esforco: 2,
+    referencia: 'Pré-requisito de todo o pilar de scouting',
+  },
+  {
+    titulo: 'Sessão de observação',
+    descricao: 'Assistir um jogo do qual não participamos, para observar alguém. Mesmo motor de marcação, mas sem escalação nossa e com dois times de fora. É o que transforma o app de ferramenta do time em ferramenta de análise de qualquer jogo.',
+    area: 'scouting', status: 'ideia', impacto: 3, esforco: 2,
+    referencia: 'Wyscout — acervo de partidas',
+  },
+  {
+    titulo: 'Modo foco: rastrear um jogador',
+    descricao: 'Escolher um jogador e registrar tudo que ele faz durante a partida gravada — perde, recupera, passa, finaliza, cria chance. A marcação some do resto do jogo e fica só nele, o que deixa a codificação muito mais rápida e é exatamente como o olheiro trabalha.',
+    area: 'scouting', status: 'ideia', impacto: 3, esforco: 2,
+    referencia: 'Spiideo AutoFollow — seguir o jogador, não a bola',
+  },
+  {
+    titulo: 'Comparação de jogadores por percentil',
+    descricao: 'Colocar dois ou mais jogadores lado a lado nas mesmas métricas, normalizados por tempo jogado. É o núcleo de qualquer decisão de scouting: sem comparação, número isolado não diz se é bom.',
+    area: 'scouting', status: 'ideia', impacto: 3, esforco: 2,
+    referencia: 'StatsBomb radars · Wyscout advanced search',
+  },
+  {
+    titulo: 'Relatório de observação exportável',
+    descricao: 'Fechar a observação num documento: quem foi visto, contra quem, o que fez, pontos fortes e fracos, e o parecer. É o entregável do olheiro — sem ele o trabalho fica preso no app.',
+    area: 'scouting', status: 'ideia', impacto: 3, esforco: 2,
+    referencia: 'Wyscout · Driblab',
+  },
+  {
+    titulo: 'Busca por critério de estatística',
+    descricao: 'Filtrar jogadores observados por número, posição, idade e faixa de métrica. É o que faz o banco de observações virar ferramenta de decisão em vez de arquivo morto.',
+    area: 'scouting', status: 'ideia', impacto: 2, esforco: 2,
+    referencia: 'Wyscout Advanced Search',
+  },
+  {
+    titulo: 'Câmera ao vivo',
+    descricao: 'Captura em tempo real com câmera dedicada ou celular transmitindo. Adiado de propósito para o fim do projeto: todo o resto funciona com vídeo gravado, e câmera ao vivo traz um custo de hardware e sincronização que não paga agora.',
+    area: 'captura', status: 'ideia', impacto: 1, esforco: 3,
+    referencia: 'Adiado — Veo, Spiideo, Pixellot',
+  },
   // ---- A visão de longo prazo -------------------------------------------------
   {
     titulo: 'Treino prescrito para a dificuldade do jogador',
@@ -46,7 +94,7 @@ const sementes: Semente[] = [
   },
   {
     titulo: 'IA assistente dentro do vídeo',
-    descricao: 'A IA propõe os lances da gravação e o analista confirma. O modelo já reserva origem, confiança e confirmado, então o palpite da máquina nunca entra na estatística confundido com marcação humana. Depende de vídeo real, que já existe.',
+    descricao: 'A IA propõe os lances da gravação e o analista confirma. O modelo já reserva origem, confiança e confirmado, então o palpite da máquina nunca entra na estatística confundido com marcação humana. Roda sobre gravação, não sobre transmissão ao vivo — o vídeo gravado já existe no app.',
     area: 'ia', status: 'ideia', impacto: 3, esforco: 3,
     referencia: 'Metrica Smart Tagging 3.0 · Veo',
   },
@@ -202,6 +250,17 @@ const sementes: Semente[] = [
   { titulo: 'Métricas físicas', descricao: 'Velocidade, distância e sprints como entidade própria, não como evento — medição sobre período é coisa diferente de lance num instante.', area: 'fisico', status: 'feito', impacto: 2, esforco: 2 },
   { titulo: 'Perfil do jogador', descricao: 'Evolução em doze métricas, mapa de finalizações e tabela sessão a sessão. Lacuna aparece como lacuna, não como zero.', area: 'analise', status: 'feito', impacto: 3, esforco: 3 },
 ];
+
+/** Adds seed items the install has never seen, matched by title. User edits survive,
+ *  and an item the user deliberately deleted stays deleted only until the seed bumps —
+ *  a deliberate trade for keeping the roadmap in sync. */
+export function fundirIdeias(existentes: Ideia[] | undefined, versaoGuardada: number): Ideia[] {
+  if (!existentes) return criarIdeiasIniciais();
+  if (versaoGuardada >= SEED_IDEIAS_VERSAO) return existentes;
+  const titulos = new Set(existentes.map((i) => i.titulo));
+  const novas = criarIdeiasIniciais().filter((i) => !titulos.has(i.titulo));
+  return [...novas, ...existentes];
+}
 
 export function criarIdeiasIniciais(): Ideia[] {
   const agora = Date.now();

@@ -2,7 +2,11 @@ export type EventTypeKey =
   | 'finalizacao' | 'cartao' | 'passe' | 'cruzamento' | 'lancamento'
   | 'perda' | 'recuperacao' | 'falta';
 
-/** Which team an event belongs to. Never encoded as a red/green pair in the UI. */
+/** Which side of the session an event belongs to. Positional, not possessive: the
+ *  session declares who side A and side B are. In our own matches A is our team, so
+ *  nothing changes on screen; when scouting a professional match neither side is ours.
+ *  Stored values stay 'nos'/'adversario' so existing history migrates untouched.
+ *  Never encoded as a red/green pair in the UI. */
 export type Lado = 'nos' | 'adversario';
 
 /** How a session is tagged. The three modes produce the same events; what differs is
@@ -15,6 +19,17 @@ export type OrigemEvento = 'ao-vivo' | 'manual' | 'ia';
 
 export type Posicao = 'goleiro' | 'zagueiro' | 'ala' | 'meia' | 'atacante';
 
+/** Clubs. Ours is just one of them — which is what makes scouting possible at all. */
+export interface Time {
+  id: string;
+  nome: string;
+  ehMeuTime: boolean;
+  criadoEm: number;
+}
+
+/** A player in our squad, or one we are watching from outside. */
+export type VinculoJogador = 'elenco' | 'observado';
+
 /** A goal is a *result* of a shot, not a separate event type — that is what makes
  *  conversion rate computable and gives missed shots somewhere to live. */
 export type ResultadoFin = 'gol' | 'defendida' | 'trave' | 'fora' | 'bloqueada';
@@ -25,6 +40,12 @@ export interface Jogador {
   numero?: number;
   posicao: Posicao;
   ativo: boolean;
+  timeId: string;
+  vinculo: VinculoJogador;
+  /** Scouting context that our own squad never needs. */
+  idade?: number;
+  pePreferido?: 'direito' | 'esquerdo' | 'ambos';
+  nota?: string;
 }
 
 export interface EventButton {
@@ -73,7 +94,8 @@ export interface KeyLabel {
   label: string;
 }
 
-export type TipoSessao = 'partida' | 'treino';
+/** Observação is a match we are not playing in, watched to scout somebody. */
+export type TipoSessao = 'partida' | 'treino' | 'observacao';
 
 export interface Sessao {
   id: string;
@@ -81,6 +103,11 @@ export interface Sessao {
   data: string;
   label: string;
   modoRegistro: ModoRegistro;
+  /** Who side A and side B are. A is our team in our own sessions. */
+  timeAId?: string;
+  timeBId?: string;
+  /** Scouting sessions track one player specifically. */
+  jogadorFocoId?: string;
   /** Present once a video file has been attached (the file lives in IndexedDB). */
   video?: { nome: string; tamanho: number; tipo: string; salvoEm: number };
   /** Where kickoff sits inside the recording, in seconds. The tape starts before the
@@ -150,7 +177,7 @@ export type StatusIdeia = 'ideia' | 'estudando' | 'fazendo' | 'feito' | 'descart
  *  that cut across it. */
 export type AreaIdeia =
   | 'captura' | 'codificacao' | 'analise' | 'devolucao'
-  | 'ia' | 'fisico' | 'engajamento' | 'plataforma';
+  | 'ia' | 'fisico' | 'scouting' | 'engajamento' | 'plataforma';
 
 export type Escala = 1 | 2 | 3;
 
@@ -172,6 +199,10 @@ export interface Ideia {
 export type GradeZonas = 9 | 12;
 
 export interface Config {
+  meuTimeId?: string;
+  /** Bumped when the seeded backlog changes, so new items reach existing installs
+   *  without overwriting anything the user edited. */
+  ideiasSeedVersao?: number;
   /** Sector granularity used for display. Always 3 columns; 9 = 3 faixas, 12 = 4 faixas,
    *  so left/center/right keeps the same meaning when switching. */
   gradeZonas: GradeZonas;

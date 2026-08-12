@@ -36,6 +36,19 @@ export default function RegistroScreen() {
 
   const ehVideo = sessao?.modoRegistro === 'video';
   const ehTreino = sessao?.tipoSessao === 'treino';
+  const ehObservacao = sessao?.tipoSessao === 'observacao';
+
+  // Side A/B is positional: in our own sessions A is our club, in an observation it is
+  // whichever club the session declared.
+  const nomeLado = (l: Lado): string => {
+    const id = l === 'nos' ? sessao?.timeAId : sessao?.timeBId;
+    const t = state.times.find((x) => x.id === id);
+    if (t) return t.nome;
+    return l === 'nos' ? state.config.nomeTime : 'Adversário';
+  };
+  const jogadorFoco = sessao?.jogadorFocoId
+    ? state.jogadores.find((j) => j.id === sessao.jogadorFocoId)
+    : undefined;
 
   useEffect(() => {
     if (!relogioAtivo) return;
@@ -45,6 +58,14 @@ export default function RegistroScreen() {
 
   const jogadoresDaSessao = useMemo(() => {
     if (!sessao) return [];
+    if (sessao.tipoSessao === 'observacao') {
+      // The focus player comes first: in scouting most events belong to them.
+      const dosClubes = state.jogadores.filter(
+        (j) => j.timeId === sessao.timeAId || j.timeId === sessao.timeBId,
+      );
+      const foco = dosClubes.filter((j) => j.id === sessao.jogadorFocoId);
+      return [...foco, ...dosClubes.filter((j) => j.id !== sessao.jogadorFocoId)];
+    }
     const escalados = state.jogadores.filter((j) => sessao.escalacao.includes(j.id));
     return escalados.length > 0 ? escalados : state.jogadores.filter((j) => j.ativo);
   }, [sessao, state.jogadores]);
@@ -201,15 +222,30 @@ export default function RegistroScreen() {
         }}>
           {ehVideo ? 'VÍDEO' : 'AO VIVO'}
         </div>
+        {ehObservacao && (
+          <div style={{
+            fontSize: 10, fontWeight: 800, padding: '3px 7px', borderRadius: 5,
+            background: colors.goldSoft, color: colors.gold,
+          }}>
+            OBSERVAÇÃO
+          </div>
+        )}
+        {jogadorFoco && (
+          <div style={{ fontSize: 12, color: colors.muted }}>
+            foco: <strong style={{ color: colors.text }}>{jogadorFoco.nome}</strong>
+          </div>
+        )}
         <div style={{ fontSize: 12, color: colors.mutedDark }}>
-          {sessao.tipoSessao === 'partida' ? 'Partida' : 'Treino'} · {sessao.data}
+          {sessao.tipoSessao === 'partida' ? 'Partida' : sessao.tipoSessao === 'treino' ? 'Treino' : 'Observação'} · {sessao.data}
         </div>
-        <div onClick={() => setEscalacaoAberta((o) => !o)} style={{ fontSize: 12, color: colors.blue, cursor: 'pointer', fontWeight: 600 }}>
-          Escalação: {sessao.escalacao.length} {escalacaoAberta ? '▲' : '▼'}
-        </div>
+        {!ehObservacao && (
+          <div onClick={() => setEscalacaoAberta((o) => !o)} style={{ fontSize: 12, color: colors.blue, cursor: 'pointer', fontWeight: 600 }}>
+            Escalação: {sessao.escalacao.length} {escalacaoAberta ? '▲' : '▼'}
+          </div>
+        )}
       </div>
 
-      {escalacaoAberta && (
+      {escalacaoAberta && !ehObservacao && (
         <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 14, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {state.jogadores.filter((j) => j.ativo).map((j) => {
             const escalado = sessao.escalacao.includes(j.id);
@@ -339,7 +375,7 @@ export default function RegistroScreen() {
                     border: `1px solid ${lado === l ? corLado(l) : colors.chipBorder}`,
                     color: lado === l ? colors.text : colors.muted,
                   }}>
-                    {l === 'nos' ? state.config.nomeTime : 'Adversário'}
+                    {nomeLado(l)}
                   </div>
                 ))}
               </div>
@@ -368,7 +404,7 @@ export default function RegistroScreen() {
                 <div onClick={goBack} style={{ fontSize: 13, color: colors.muted, cursor: 'pointer' }}>‹ Voltar</div>
                 <div style={{ fontSize: 13, fontWeight: 700 }}>{flow.botao.label}</div>
                 <div style={{ fontSize: 11, fontWeight: 700, color: corLado(flow.lado) }}>
-                  {flow.lado === 'nos' ? state.config.nomeTime : 'Adversário'}
+                  {nomeLado(flow.lado)}
                 </div>
               </div>
               <div style={{ fontSize: 12, color: colors.muted, fontWeight: 600 }}>MINUTO DO EVENTO</div>
@@ -398,7 +434,7 @@ export default function RegistroScreen() {
                   fontSize: 10, fontWeight: 800, padding: '2px 6px', borderRadius: 4,
                   background: flow.lado === 'nos' ? colors.blueSoft : colors.goldSoft, color: corLado(flow.lado),
                 }}>
-                  {flow.lado === 'nos' ? state.config.nomeTime.toUpperCase() : 'ADVERSÁRIO'}
+                  {nomeLado(flow.lado).toUpperCase()}
                 </div>
               </div>
               {currentStep === 'local' && (
@@ -471,7 +507,7 @@ export default function RegistroScreen() {
                     <span>
                       {labelTipo(e.tipo)} · {formatMinuto(e.minuto)}
                       <span style={{ color: corLado(e.lado), fontWeight: 700, marginLeft: 6 }}>
-                        {e.lado === 'nos' ? state.config.nomeTime : 'Adversário'}
+                        {nomeLado(e.lado)}
                       </span>
                       {e.origem === 'ia' && (
                         <span style={{ marginLeft: 6, color: colors.gold, fontWeight: 700 }}>IA</span>

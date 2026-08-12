@@ -16,6 +16,13 @@ export default function SessoesScreen() {
   const [data, setData] = useState(() => new Date().toISOString().slice(0, 10));
   const [modoRegistro, setModoRegistro] = useState<ModoRegistro>('ao-vivo');
   const [escalacao, setEscalacao] = useState<string[]>(() => ativos.map((j) => j.id));
+  const meuTimeId = state.config.meuTimeId ?? state.times.find((t) => t.ehMeuTime)?.id ?? '';
+  const outros = state.times.filter((t) => !t.ehMeuTime);
+  const [timeAId, setTimeAId] = useState<string>(outros[0]?.id ?? '');
+  const [timeBId, setTimeBId] = useState<string>(outros[1]?.id ?? '');
+  const [jogadorFocoId, setJogadorFocoId] = useState<string>('');
+  const ehObservacao = tipoSessao === 'observacao';
+  const focoCandidatos = state.jogadores.filter((j) => j.timeId === timeAId || j.timeId === timeBId);
 
   const sessoes = [...state.sessoes].sort((a, b) => b.createdAt - a.createdAt);
   const eventosPorSessao = (id: string) => state.eventos.filter((e) => e.sessaoId === id).length;
@@ -25,8 +32,16 @@ export default function SessoesScreen() {
   }
 
   function handleCreate() {
-    const finalLabel = label.trim() || (tipoSessao === 'partida' ? 'Partida sem nome' : 'Treino sem nome');
-    const id = createSessao({ tipoSessao, label: finalLabel, modoRegistro, data, escalacao });
+    const padrao = tipoSessao === 'partida' ? 'Partida sem nome'
+      : tipoSessao === 'treino' ? 'Treino sem nome' : 'Observação sem nome';
+    const finalLabel = label.trim() || padrao;
+    const id = createSessao({
+      tipoSessao, label: finalLabel, modoRegistro, data,
+      escalacao: ehObservacao ? [] : escalacao,
+      timeAId: ehObservacao ? timeAId || undefined : meuTimeId,
+      timeBId: ehObservacao ? timeBId || undefined : undefined,
+      jogadorFocoId: ehObservacao ? jogadorFocoId || undefined : undefined,
+    });
     navigate(`/registro/${id}`);
   }
 
@@ -42,24 +57,26 @@ export default function SessoesScreen() {
       {open && (
         <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 14, padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ display: 'flex', gap: 10 }}>
-            {(['partida', 'treino'] as TipoSessao[]).map((t) => (
+            {(['partida', 'treino', 'observacao'] as TipoSessao[]).map((t) => (
               <div key={t} onClick={() => setTipoSessao(t)} style={{
                 padding: '10px 18px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer',
                 background: tipoSessao === t ? colors.blueSofter : colors.chipBg,
                 border: `1px solid ${tipoSessao === t ? colors.blue : colors.chipBorder}`,
               }}>
-                {t === 'partida' ? 'Partida' : 'Treino'}
+                {t === 'partida' ? 'Partida' : t === 'treino' ? 'Treino' : 'Observação'}
               </div>
             ))}
           </div>
 
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: 200, display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <label style={{ fontSize: 11, color: colors.muted, fontWeight: 600 }}>NOME / ADVERSÁRIO</label>
+              <label style={{ fontSize: 11, color: colors.muted, fontWeight: 600 }}>
+                {ehObservacao ? 'NOME DA PARTIDA' : 'NOME / ADVERSÁRIO'}
+              </label>
               <input
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
-                placeholder={tipoSessao === 'partida' ? 'vs Falcões' : 'Treino técnico'}
+                placeholder={tipoSessao === 'partida' ? 'vs Falcões' : tipoSessao === 'treino' ? 'Treino técnico' : 'Santos x Palmeiras'}
                 style={{ background: colors.chipBg, color: colors.text, border: `1px solid ${colors.borderStrong}`, borderRadius: 8, padding: '10px 12px', fontSize: 13 }}
               />
             </div>
@@ -106,6 +123,46 @@ export default function SessoesScreen() {
             </div>
           </div>
 
+          {ehObservacao ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ fontSize: 11, color: colors.muted, fontWeight: 600 }}>QUEM JOGA</div>
+              {outros.length < 1 ? (
+                <div style={{ fontSize: 13, color: colors.mutedDark }}>
+                  Cadastre os clubes primeiro em{' '}
+                  <span onClick={() => navigate('/elenco')} style={{ color: colors.blue, cursor: 'pointer' }}>Jogadores</span>.
+                </div>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <select value={timeAId} onChange={(e) => setTimeAId(e.target.value)} style={{ background: colors.chipBg, color: colors.text, border: `1px solid ${colors.borderStrong}`, borderRadius: 8, padding: '10px 12px', fontSize: 13, fontWeight: 600 }}>
+                      <option value="">Time A</option>
+                      {outros.map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
+                    </select>
+                    <span style={{ color: colors.mutedDark, fontSize: 13 }}>×</span>
+                    <select value={timeBId} onChange={(e) => setTimeBId(e.target.value)} style={{ background: colors.chipBg, color: colors.text, border: `1px solid ${colors.borderStrong}`, borderRadius: 8, padding: '10px 12px', fontSize: 13, fontWeight: 600 }}>
+                      <option value="">Time B</option>
+                      {outros.map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
+                    </select>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <label style={{ fontSize: 11, color: colors.muted, fontWeight: 600 }}>JOGADOR OBSERVADO</label>
+                    <select value={jogadorFocoId} onChange={(e) => setJogadorFocoId(e.target.value)} style={{ background: colors.chipBg, color: colors.text, border: `1px solid ${colors.borderStrong}`, borderRadius: 8, padding: '10px 12px', fontSize: 13, fontWeight: 600, maxWidth: 320 }}>
+                      <option value="">Nenhum — marcar o jogo inteiro</option>
+                      {focoCandidatos.map((j) => (
+                        <option key={j.id} value={j.id}>
+                          {j.numero !== undefined ? `${j.numero} · ` : ''}{j.nome}
+                        </option>
+                      ))}
+                    </select>
+                    <div style={{ fontSize: 11, color: colors.mutedDark, lineHeight: 1.45, maxWidth: 460 }}>
+                      Com um jogador escolhido, a marcação foca nele — é assim que o olheiro trabalha,
+                      e o registro fica muito mais rápido do que tentar cobrir vinte e dois.
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
               <label style={{ fontSize: 11, color: colors.muted, fontWeight: 600 }}>QUEM JOGOU</label>
@@ -135,6 +192,7 @@ export default function SessoesScreen() {
               )}
             </div>
           </div>
+          )}
 
           <div onClick={handleCreate} style={{ alignSelf: 'flex-start', padding: '10px 20px', background: colors.blue, color: '#0a0e13', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
             Criar e começar a registrar
@@ -154,10 +212,10 @@ export default function SessoesScreen() {
           >
             <div style={{
               fontSize: 10, fontWeight: 800, letterSpacing: 0.5, padding: '4px 8px', borderRadius: 6,
-              background: s.tipoSessao === 'partida' ? colors.blueSoft : 'rgba(245,166,35,0.14)',
-              color: s.tipoSessao === 'partida' ? colors.blue : colors.gold,
+              background: s.tipoSessao === 'observacao' ? 'rgba(245,166,35,0.14)' : colors.blueSoft,
+              color: s.tipoSessao === 'observacao' ? colors.gold : colors.blue,
             }}>
-              {s.tipoSessao === 'partida' ? 'PARTIDA' : 'TREINO'}
+              {s.tipoSessao === 'partida' ? 'PARTIDA' : s.tipoSessao === 'treino' ? 'TREINO' : 'OBSERVAÇÃO'}
             </div>
             <div style={{ flex: 1, minWidth: 160, fontSize: 14, fontWeight: 600 }}>{s.label}</div>
             {s.tipoSessao === 'partida' && (() => {
@@ -168,7 +226,13 @@ export default function SessoesScreen() {
             <div style={{ fontSize: 12, color: colors.mutedDark }}>
               {s.modoRegistro === 'video' ? (s.video ? 'vídeo anexado' : 'vídeo pendente') : s.modoRegistro === 'ia' ? 'IA' : 'ao vivo'}
             </div>
-            <div style={{ fontSize: 12, color: colors.mutedDark }}>{s.escalacao.length} jogadores</div>
+            <div style={{ fontSize: 12, color: colors.mutedDark }}>
+              {s.tipoSessao === 'observacao'
+                ? (s.jogadorFocoId
+                  ? `foco: ${state.jogadores.find((j) => j.id === s.jogadorFocoId)?.nome ?? '—'}`
+                  : 'jogo inteiro')
+                : `${s.escalacao.length} jogadores`}
+            </div>
             <div style={{ fontSize: 12, color: colors.muted }}>{eventosPorSessao(s.id)} eventos</div>
           </div>
         ))}
