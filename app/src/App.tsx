@@ -5,6 +5,7 @@ import RegistroScreen from './components/RegistroScreen';
 import ElencoScreen from './components/ElencoScreen';
 import CampoScreen from './components/CampoScreen';
 import JogadorScreen from './components/JogadorScreen';
+import IdeiasScreen from './components/IdeiasScreen';
 import DashboardScreen from './components/DashboardScreen';
 import { AppProvider } from './store';
 
@@ -27,6 +28,7 @@ export default function App() {
             <Route path="/jogador/:jogadorId" element={<JogadorScreen />} />
             <Route path="/campo" element={<CampoScreen />} />
             <Route path="/dashboard" element={<DashboardScreen />} />
+            <Route path="/ideias" element={<IdeiasScreen />} />
             <Route path="*" element={<Navigate to="/sessoes" replace />} />
           </Routes>
         </div>

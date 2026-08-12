@@ -142,6 +142,33 @@ export interface MetricaFisica {
   atualizadoEm: number;
 }
 
+/** The product backlog lives inside the product. Status carries a shape as well as a
+ *  colour (check, strike-through) so it never depends on hue alone. */
+export type StatusIdeia = 'ideia' | 'estudando' | 'fazendo' | 'feito' | 'descartado';
+
+/** Mapped to the four-beat cycle every serious analysis tool runs, plus the layers
+ *  that cut across it. */
+export type AreaIdeia =
+  | 'captura' | 'codificacao' | 'analise' | 'devolucao'
+  | 'ia' | 'fisico' | 'engajamento' | 'plataforma';
+
+export type Escala = 1 | 2 | 3;
+
+export interface Ideia {
+  id: string;
+  titulo: string;
+  descricao: string;
+  area: AreaIdeia;
+  status: StatusIdeia;
+  /** Impact over effort is what turns a wish list into an order of work. */
+  impacto: Escala;
+  esforco: Escala;
+  /** Where it came from — a platform we studied, a piece of research, a conversation. */
+  referencia?: string;
+  criadoEm: number;
+  atualizadoEm: number;
+}
+
 export type GradeZonas = 9 | 12;
 
 export interface Config {

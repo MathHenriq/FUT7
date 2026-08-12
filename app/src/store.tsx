@@ -1,9 +1,10 @@
 import { createContext, useContext, useEffect, useMemo, useReducer, type ReactNode } from 'react';
 import type {
-  Config, EventTypeKey, EventoRegistrado, Exercicio, FlowData, GradeZonas, Jogador, Lado,
+  Config, EventTypeKey, EventoRegistrado, Exercicio, FlowData, GradeZonas, Ideia, Jogador, Lado,
   MetricaFisica, ModoRegistro, OrigemEvento, Sessao, TipoExercicio, TipoSessao,
 } from './types';
 import { criarElencoInicial, seedSessoesEEventos } from './data';
+import { criarIdeiasIniciais } from './ideias';
 
 const STORAGE_KEY = 'fut7-analytics-v4';
 const LEGACY_V3 = 'fut7-analytics-v3';
@@ -15,6 +16,7 @@ interface AppState {
   eventos: EventoRegistrado[];
   exercicios: Exercicio[];
   metricas: MetricaFisica[];
+  ideias: Ideia[];
   config: Config;
   currentSessaoId: string | null;
   dashPlayerId: string;
@@ -32,6 +34,7 @@ function estadoSemeado(): AppState {
     eventos,
     exercicios: [],
     metricas: [],
+    ideias: criarIdeiasIniciais(),
     config: defaultConfig,
     currentSessaoId: null,
     dashPlayerId: jogadores[0]?.id ?? '',
@@ -147,6 +150,7 @@ function migrarV3(parsed: Loose): AppState {
     eventos: sessoes.length > 0 ? eventos : base.eventos,
     exercicios: [],
     metricas: [],
+    ideias: criarIdeiasIniciais(),
     config: { ...defaultConfig, ...((parsed.config ?? {}) as Partial<Config>) },
     currentSessaoId: (parsed.currentSessaoId as string | null) ?? null,
     dashPlayerId,
@@ -167,6 +171,7 @@ function normalizar(st: AppState): AppState {
     eventos: st.eventos.map((e) => ({ ...e, origem: e.origem ?? ('manual' as OrigemEvento) })),
     exercicios: st.exercicios ?? [],
     metricas: st.metricas ?? [],
+    ideias: st.ideias ?? criarIdeiasIniciais(),
   };
 }
 
@@ -200,6 +205,9 @@ type Action =
   | { type: 'UPDATE_EXERCICIO'; exercicio: Exercicio }
   | { type: 'DELETE_EXERCICIO'; id: string }
   | { type: 'SET_METRICA'; metrica: MetricaFisica }
+  | { type: 'ADD_IDEIA'; ideia: Ideia }
+  | { type: 'UPDATE_IDEIA'; ideia: Ideia }
+  | { type: 'DELETE_IDEIA'; id: string }
   | { type: 'ADD_EVENTO'; evento: EventoRegistrado }
   | { type: 'UPDATE_EVENTO'; id: string; tipo: EventTypeKey; lado: Lado; minuto: number; data: FlowData }
   | { type: 'DELETE_EVENTO'; id: string }
@@ -274,6 +282,15 @@ function reducer(state: AppState, action: Action): AppState {
           : [...state.metricas, action.metrica],
       };
     }
+    case 'ADD_IDEIA':
+      return { ...state, ideias: [action.ideia, ...state.ideias] };
+    case 'UPDATE_IDEIA':
+      return {
+        ...state,
+        ideias: state.ideias.map((i) => (i.id === action.ideia.id ? { ...action.ideia, atualizadoEm: Date.now() } : i)),
+      };
+    case 'DELETE_IDEIA':
+      return { ...state, ideias: state.ideias.filter((i) => i.id !== action.id) };
     case 'ADD_JOGADOR':
       return { ...state, jogadores: [...state.jogadores, action.jogador] };
     case 'UPDATE_JOGADOR':
@@ -314,6 +331,9 @@ interface Ctx {
   addExercicio: (input: { sessaoId: string; nome: string; tipo: TipoExercicio; duracaoMin?: number }) => string;
   updateExercicio: (exercicio: Exercicio) => void;
   deleteExercicio: (id: string) => void;
+  addIdeia: (input: Omit<Ideia, 'id' | 'criadoEm' | 'atualizadoEm'>) => void;
+  updateIdeia: (ideia: Ideia) => void;
+  deleteIdeia: (id: string) => void;
   setMetrica: (input: {
     sessaoId: string; jogadorId: string; velocidadeMaxKmh?: number; distanciaM?: number;
     sprints?: number; origem?: MetricaFisica['origem'];
@@ -367,6 +387,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     },
     updateExercicio: (exercicio) => dispatch({ type: 'UPDATE_EXERCICIO', exercicio }),
     deleteExercicio: (id) => dispatch({ type: 'DELETE_EXERCICIO', id }),
+    addIdeia: (input) => dispatch({
+      type: 'ADD_IDEIA',
+      ideia: { id: novoId('ideia'), criadoEm: Date.now(), atualizadoEm: Date.now(), ...input },
+    }),
+    updateIdeia: (ideia) => dispatch({ type: 'UPDATE_IDEIA', ideia }),
+    deleteIdeia: (id) => dispatch({ type: 'DELETE_IDEIA', id }),
     setMetrica: (input) => dispatch({
       type: 'SET_METRICA',
       metrica: {

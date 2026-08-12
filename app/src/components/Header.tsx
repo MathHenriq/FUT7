@@ -27,6 +27,7 @@ export default function Header() {
     { key: 'campo', label: 'Campo', active: location.pathname.startsWith('/campo'), onClick: () => navigate('/campo') },
     { key: 'elenco', label: 'Elenco', active: location.pathname.startsWith('/elenco'), onClick: () => navigate('/elenco') },
     { key: 'dashboard', label: 'Dashboard', active: location.pathname.startsWith('/dashboard'), onClick: () => navigate('/dashboard') },
+    { key: 'ideias', label: 'Ideias', active: location.pathname.startsWith('/ideias'), onClick: () => navigate('/ideias') },
   ];
 
   return (
