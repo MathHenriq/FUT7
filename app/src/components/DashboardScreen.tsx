@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { colors, fontDisplay } from '../colors';
+import { colors, fontDisplay, rotulo } from '../colors';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { useApp } from '../store';
 import type { GradeZonas, Lado } from '../types';
@@ -27,7 +27,7 @@ function PainelFisico() {
     .sort((a, b) => (b.recorde ?? 0) - (a.recorde ?? 0));
 
   return (
-    <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 14, padding: 20 }}>
+    <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 3, padding: 20 }}>
       <div style={{ fontSize: 13, fontWeight: 700 }}>Físico</div>
       <div style={{ fontSize: 12, color: colors.mutedDark, marginTop: 2, marginBottom: 14 }}>
         Recorde de velocidade e volume acumulado
@@ -77,7 +77,7 @@ export default function DashboardScreen() {
         <div style={{ display: 'flex', gap: 8 }}>
           {(['nos', 'adversario'] as Lado[]).map((l) => (
             <div key={l} onClick={() => setLado(l)} style={{
-              padding: '8px 16px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+              padding: '8px 16px', borderRadius: 3, fontSize: 12, fontWeight: 700, cursor: 'pointer',
               background: lado === l ? (l === 'nos' ? colors.blueSofter : colors.goldSoft) : colors.chipBg,
               border: `1px solid ${lado === l ? (l === 'nos' ? colors.blue : colors.gold) : colors.chipBorder}`,
               color: lado === l ? colors.text : colors.muted,
@@ -107,8 +107,8 @@ export default function DashboardScreen() {
           { label: 'Precisão de passe', valor: `${d.precisaoPasse}%`, sub: `${d.passes} passes` },
           { label: 'Faltas', valor: d.faltasCometidas, sub: `${d.faltasSofridas} sofridas` },
         ].map((k) => (
-          <div key={k.label} style={{ background: colors.cardBgDense, border: `1px solid ${colors.borderAlt}`, borderRadius: 12, padding: '14px 16px' }}>
-            <div style={{ fontSize: 11, color: colors.muted, fontWeight: 600, marginBottom: 4 }}>{k.label}</div>
+          <div key={k.label} style={{ background: colors.cardBgDense, border: `1px solid ${colors.borderAlt}`, borderRadius: 3, padding: '14px 16px' }}>
+            <div style={{ ...rotulo, color: colors.mutedDark, marginBottom: 5 }}>{k.label}</div>
             <div style={{
               fontFamily: fontDisplay, fontSize: 26, fontWeight: 800,
               color: k.destaque ? (Number(k.valor) >= 0 ? colors.blue : colors.gold) : colors.text,
@@ -122,8 +122,8 @@ export default function DashboardScreen() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
         {d.goalOrigin.map((g) => (
-          <div key={g.label} style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 14, padding: 18 }}>
-            <div style={{ fontSize: 12, color: colors.muted, fontWeight: 600, marginBottom: 6 }}>{g.label}</div>
+          <div key={g.label} style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 3, padding: 18 }}>
+            <div style={{ ...rotulo, color: colors.mutedDark, marginBottom: 6 }}>{g.label}</div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
               <div style={{ fontFamily: fontDisplay, fontSize: 32, fontWeight: 800 }}>{g.pct}%</div>
               <div style={{ fontSize: 12, color: colors.mutedDark }}>{g.count} gols</div>
@@ -140,7 +140,7 @@ export default function DashboardScreen() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 20 }}>
-        <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 14, padding: 20 }}>
+        <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 3, padding: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
             <div>
               <div style={{ fontSize: 13, fontWeight: 700 }}>Evolução individual</div>
@@ -150,14 +150,14 @@ export default function DashboardScreen() {
               <select
                 value={state.dashPlayerId}
                 onChange={(e) => dispatch({ type: 'SET_DASH_PLAYER', playerId: e.target.value })}
-                style={{ background: colors.chipBg, color: colors.text, border: `1px solid ${colors.borderStrong}`, borderRadius: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600 }}
+                style={{ background: colors.chipBg, color: colors.text, border: `1px solid ${colors.borderStrong}`, borderRadius: 3, padding: '8px 10px', fontSize: 12, fontWeight: 600 }}
               >
                 {ativos.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
               </select>
               <select
                 value={state.dashSessao}
                 onChange={(e) => dispatch({ type: 'SET_DASH_SESSAO', sessaoId: e.target.value })}
-                style={{ background: colors.chipBg, color: colors.text, border: `1px solid ${colors.borderStrong}`, borderRadius: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600 }}
+                style={{ background: colors.chipBg, color: colors.text, border: `1px solid ${colors.borderStrong}`, borderRadius: 3, padding: '8px 10px', fontSize: 12, fontWeight: 600 }}
               >
                 <option value="all">Todas as sessões</option>
                 {d.sessaoOptionsList.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
@@ -172,7 +172,7 @@ export default function DashboardScreen() {
           </svg>
         </div>
 
-        <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 14, padding: 20 }}>
+        <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 3, padding: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
             <div>
               <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
@@ -193,7 +193,7 @@ export default function DashboardScreen() {
             <div style={{ display: 'flex', gap: 4 }}>
               {([9, 12] as GradeZonas[]).map((g) => (
                 <div key={g} onClick={() => setGradeZonas(g)} style={{
-                  padding: '5px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                  padding: '5px 10px', borderRadius: 3, fontSize: 11, fontWeight: 700, cursor: 'pointer',
                   background: state.config.gradeZonas === g ? colors.blueSofter : colors.chipBg,
                   border: `1px solid ${state.config.gradeZonas === g ? colors.blue : colors.chipBorder}`,
                   color: state.config.gradeZonas === g ? colors.text : colors.muted,
@@ -205,14 +205,14 @@ export default function DashboardScreen() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 6 }}>
             {(mapa === 'gols' ? d.heatCells : d.perdaCells).map((h) => (
-              <div key={h.label} title={h.label} style={{ aspectRatio: '1', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: h.bg }}>
-                <div style={{ fontFamily: fontDisplay, fontSize: 20, fontWeight: 800, color: '#fff' }}>{h.value}</div>
+              <div key={h.label} title={h.label} style={{ aspectRatio: '1', borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', background: h.bg }}>
+                <div style={{ fontFamily: fontDisplay, fontSize: 20, fontWeight: 800, color: colors.heatTinta }}>{h.value}</div>
               </div>
             ))}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14 }}>
             <div style={{ fontSize: 11, color: colors.mutedDark }}>Menos</div>
-            <div style={{ flex: 1, height: 6, borderRadius: 3, background: 'linear-gradient(90deg,#17324a,#2f6fd6,#f5a623)' }} />
+            <div style={{ flex: 1, height: 6, borderRadius: 3, background: 'linear-gradient(90deg, var(--heat-1), var(--heat-4), var(--heat-7))' }} />
             <div style={{ fontSize: 11, color: colors.mutedDark }}>Mais</div>
           </div>
           <div style={{ fontSize: 11, color: colors.mutedDark, marginTop: 10 }}>

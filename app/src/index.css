@@ -1,4 +1,117 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Barlow+Condensed:wght@600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+/* ============================================================================
+   TOKENS
+
+   Two planes, one token set. The dark plane is the shell you operate in —
+   session, video, live tagging. The light plane is the one you read on —
+   dashboard, player profile, squad, backlog. A screen declares which plane it
+   belongs to with data-plano, and every component below inherits it without
+   knowing anything about colour.
+
+   The pairing is not decoration: tagging happens beside a pitch or in front of
+   a video, where a light ground glares; reading happens seated, where a dark
+   ground costs legibility. Same reason Hudl Wyscout ships both.
+
+   Colour carries exactly two meanings. Blue is us / positive / selected, amber
+   is them / negative / attention. Never red-green as a pair, anywhere.
+   ============================================================================ */
+
+[data-plano='escuro'] {
+  --plano: #12110e;
+  --painel: #1c1b16;
+  --painel-2: #24231d;
+
+  --tinta: #f1eee5;
+  --tinta-2: #a7a294;
+  --tinta-3: #7b7568;
+
+  --filete: #26241e;
+  --filete-forte: #3a3830;
+
+  --acento: #4d9bff;
+  --acento-tinta: #0e1620;
+  --acento-fraco: rgba(77, 155, 255, 0.16);
+  --acento-fraco2: rgba(77, 155, 255, 0.26);
+  --atencao: #e8a531;
+  --atencao-tinta: #1c1305;
+  --atencao-fraco: rgba(232, 165, 49, 0.16);
+
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --s4: #c98500;
+  --s5: #d55181;
+  --s6: #9085e9;
+
+  /* Sequential ramp: one hue, ordered. Capped so a single ink stays legible on
+     every step — magnitude is lightness, and lightness alone. */
+  --heat-0: #1d1c17;
+  --heat-1: #0e2a47;
+  --heat-2: #123457;
+  --heat-3: #163f6b;
+  --heat-4: #1a4b81;
+  --heat-5: #1f5896;
+  --heat-6: #2466ae;
+  --heat-7: #2a78d6;
+  --heat-tinta: #eaf3ff;
+
+  --cartao-amarelo: #f2c94c;
+  --cartao-vermelho: #d1544f;
+
+  --gramado-a: #1b2b22;
+  --gramado-b: #14211a;
+  --gramado-faixa: rgba(255, 255, 255, 0.018);
+  --gramado-linha: rgba(238, 242, 246, 0.30);
+  --gramado-marca: rgba(238, 242, 246, 0.42);
+}
+
+[data-plano='claro'] {
+  --plano: #f1efe9;
+  --painel: #faf9f4;
+  --painel-2: #f4f2ec;
+
+  --tinta: #14130d;
+  --tinta-2: #56534a;
+  --tinta-3: #8b877c;
+
+  --filete: #dcd8cd;
+  --filete-forte: #b9b4a6;
+
+  --acento: #14538d;
+  --acento-tinta: #fdfcf9;
+  --acento-fraco: rgba(20, 83, 141, 0.10);
+  --acento-fraco2: rgba(20, 83, 141, 0.16);
+  --atencao: #9c5f00;
+  --atencao-tinta: #fdfcf9;
+  --atencao-fraco: rgba(156, 95, 0, 0.12);
+
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --s4: #eda100;
+  --s5: #e87ba4;
+  --s6: #4a3aa7;
+
+  --heat-0: #eae8e0;
+  --heat-1: #dbe9fa;
+  --heat-2: #c3dcf7;
+  --heat-3: #a8cbf3;
+  --heat-4: #86b6ef;
+  --heat-5: #6da7ec;
+  --heat-6: #5598e7;
+  --heat-7: #3987e5;
+  --heat-tinta: #0d366b;
+
+  --cartao-amarelo: #c99700;
+  --cartao-vermelho: #b23b36;
+
+  --gramado-a: #dfe6dc;
+  --gramado-b: #d6dfd3;
+  --gramado-faixa: rgba(20, 19, 13, 0.035);
+  --gramado-linha: rgba(20, 19, 13, 0.34);
+  --gramado-marca: rgba(20, 19, 13, 0.45);
+}
 
 @keyframes popIn {
   0% { transform: scale(0.9); opacity: 0; }
@@ -15,18 +128,33 @@ html, body, #root {
 }
 
 body {
-  font-family: 'Inter', sans-serif;
-  background: #05070a;
-  color: #eef2f6;
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  background: var(--plano);
+  color: var(--tinta);
   -webkit-font-smoothing: antialiased;
+  /* Every digit in a data tool eventually ends up in a column. Highest-impact
+     typographic change per character typed. */
+  font-variant-numeric: tabular-nums;
+}
+
+/* The plane owns its own ground, so a light screen does not sit on a dark page. */
+[data-plano] {
+  background: var(--plano);
+  color: var(--tinta);
 }
 
 a {
-  color: #4f8ef7;
+  color: var(--acento);
   text-decoration: none;
 }
 a:hover {
-  color: #7aa9f9;
+  color: var(--acento);
+  text-decoration: underline;
+}
+
+:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 1px;
 }
 
 ::-webkit-scrollbar {
@@ -34,8 +162,8 @@ a:hover {
   height: 8px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #26313d;
-  border-radius: 4px;
+  background: var(--filete-forte);
+  border-radius: 2px;
 }
 
 select {
@@ -47,7 +175,7 @@ button {
 }
 
 input[type="number"] {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif;
 }
 
 /* ---- Registro (unificado, responsivo) ---- */
@@ -78,9 +206,9 @@ input[type="number"] {
 }
 
 .registro-capture {
-  background: #11161c;
-  border-top: 1px solid #232d38;
-  border-radius: 20px 20px 0 0;
+  background: var(--painel);
+  border-top: 1px solid var(--filete-forte);
+  border-radius: 4px 4px 0 0;
   padding: 18px 16px 22px;
   min-height: 280px;
   display: flex;
@@ -98,7 +226,7 @@ input[type="number"] {
 .registro-grabber {
   width: 36px;
   height: 4px;
-  background: #2b3644;
+  background: var(--filete-forte);
   border-radius: 2px;
   margin: 0 auto;
 }
@@ -124,8 +252,8 @@ input[type="number"] {
   }
   .registro-capture {
     flex: 1;
-    border: 1px solid #1e2731;
-    border-radius: 14px;
+    border: 1px solid var(--filete);
+    border-radius: 3px;
     padding: 16px 18px;
     min-height: 120px;
     position: static;
@@ -146,11 +274,11 @@ input[type="number"] {
 .opt-zone-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-  background: #0e1620;
-  border: 1px solid #232d38;
-  border-radius: 12px;
-  padding: 8px;
+  gap: 3px;
+  background: var(--painel-2);
+  border: 1px solid var(--filete);
+  border-radius: 3px;
+  padding: 3px;
 }
 .opt-zone-cell {
   display: flex;
@@ -159,17 +287,19 @@ input[type="number"] {
   text-align: center;
   font-size: 10px;
   font-weight: 600;
-  color: #c3ccd4;
+  color: var(--tinta-2);
   min-height: 46px;
   padding: 4px;
-  border-radius: 8px;
+  border-radius: 2px;
   cursor: pointer;
-  background: #1b232c;
-  border: 1px solid #26313d;
+  background: var(--painel);
+  border: 1px solid var(--filete);
 }
 .opt-zone-cell.selected {
-  background: rgba(79, 142, 247, 0.22);
-  border-color: #4f8ef7;
+  background: var(--acento-fraco2);
+  border-color: var(--acento);
+  color: var(--tinta);
+  font-weight: 700;
 }
 
 .opt-grid2 {
@@ -179,22 +309,23 @@ input[type="number"] {
 }
 .opt-chip {
   padding: 18px 10px;
-  border-radius: 12px;
+  border-radius: 3px;
   text-align: center;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  background: #1b232c;
-  border: 1px solid #26313d;
-  color: #eef2f6;
+  background: var(--painel-2);
+  border: 1px solid var(--filete-forte);
+  color: var(--tinta);
 }
 .opt-chip.selected {
-  background: rgba(79, 142, 247, 0.22);
-  border-color: #4f8ef7;
+  background: var(--acento-fraco2);
+  border-color: var(--acento);
+  font-weight: 700;
 }
 .opt-chip.selected.warn {
-  background: rgba(245, 166, 35, 0.18);
-  border-color: #f5a623;
+  background: var(--atencao-fraco);
+  border-color: var(--atencao);
 }
 
 .opt-list {
@@ -206,22 +337,23 @@ input[type="number"] {
 }
 .opt-list-item {
   padding: 12px 14px;
-  border-radius: 12px;
+  border-radius: 3px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
   text-align: left;
-  background: #1b232c;
-  border: 1px solid #26313d;
-  color: #eef2f6;
+  background: var(--painel-2);
+  border: 1px solid var(--filete-forte);
+  color: var(--tinta);
 }
 .opt-list-item.selected {
-  background: rgba(79, 142, 247, 0.22);
-  border-color: #4f8ef7;
+  background: var(--acento-fraco2);
+  border-color: var(--acento);
+  font-weight: 700;
 }
 .opt-list-item.selected.warn {
-  background: rgba(245, 166, 35, 0.18);
-  border-color: #f5a623;
+  background: var(--atencao-fraco);
+  border-color: var(--atencao);
 }
 
 .opt-cardcolor-grid {
@@ -235,14 +367,14 @@ input[type="number"] {
   align-items: center;
   gap: 8px;
   padding: 16px 10px;
-  border-radius: 12px;
+  border-radius: 3px;
   cursor: pointer;
-  background: #1b232c;
-  border: 1px solid #26313d;
+  background: var(--painel-2);
+  border: 1px solid var(--filete-forte);
 }
 .opt-cardcolor-chip.selected {
-  background: rgba(79, 142, 247, 0.22);
-  border-color: #4f8ef7;
+  background: var(--acento-fraco2);
+  border-color: var(--acento);
 }
 .opt-cardcolor-dot {
   width: 18px;
@@ -257,7 +389,6 @@ input[type="number"] {
   .opt-zone-cell {
     padding: 10px 6px;
     min-height: 40px;
-    border-radius: 6px;
   }
   .opt-grid2 {
     display: flex;
@@ -266,7 +397,6 @@ input[type="number"] {
   }
   .opt-chip {
     padding: 10px 16px;
-    border-radius: 8px;
     font-size: 13px;
   }
   .opt-list {
@@ -277,7 +407,6 @@ input[type="number"] {
   }
   .opt-list-item {
     padding: 8px 14px;
-    border-radius: 8px;
     font-size: 13px;
     width: auto;
   }
@@ -288,7 +417,6 @@ input[type="number"] {
   .opt-cardcolor-chip {
     flex-direction: row;
     padding: 10px 16px;
-    border-radius: 8px;
   }
   .opt-cardcolor-dot {
     width: 12px;
@@ -297,19 +425,19 @@ input[type="number"] {
 }
 
 .minuto-input {
-  background: #1b232c;
-  color: #eef2f6;
-  border: 1px solid #2b3644;
-  border-radius: 10px;
+  background: var(--painel-2);
+  color: var(--tinta);
+  border: 1px solid var(--filete-forte);
+  border-radius: 3px;
   padding: 14px;
   font-size: 20px;
   font-weight: 700;
   width: 100%;
   text-align: center;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif;
 }
 .minuto-input:focus {
-  outline: 2px solid #4f8ef7;
+  outline: 2px solid var(--acento);
   outline-offset: 1px;
 }
 
@@ -319,15 +447,15 @@ input[type="number"] {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: #0e1620;
-  border: 1px solid #1e2731;
-  border-radius: 14px;
+  background: var(--painel-2);
+  border: 1px solid var(--filete);
+  border-radius: 3px;
   overflow: hidden;
 }
 
 .registro-video {
   position: relative;
-  background: linear-gradient(160deg, #0e1620, #161f2b);
+  background: #0b0a08;
   display: flex;
   align-items: center;
   justify-content: center;

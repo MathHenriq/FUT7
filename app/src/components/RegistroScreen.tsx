@@ -235,14 +235,14 @@ export default function RegistroScreen() {
           {placar.nos} <span style={{ color: colors.mutedDark }}>—</span> {placar.adversario}
         </div>
         <div style={{
-          fontSize: 10, fontWeight: 800, padding: '3px 7px', borderRadius: 5,
+          fontSize: 10, fontWeight: 800, padding: '3px 7px', borderRadius: 3,
           background: ehVideo ? colors.goldSoft : colors.blueSoft, color: ehVideo ? colors.gold : colors.blue,
         }}>
           {ehVideo ? 'VÍDEO' : 'AO VIVO'}
         </div>
         {ehObservacao && (
           <div style={{
-            fontSize: 10, fontWeight: 800, padding: '3px 7px', borderRadius: 5,
+            fontSize: 10, fontWeight: 800, padding: '3px 7px', borderRadius: 3,
             background: colors.goldSoft, color: colors.gold,
           }}>
             OBSERVAÇÃO
@@ -253,7 +253,7 @@ export default function RegistroScreen() {
             onClick={() => setModoFoco((f) => !f)}
             style={{
               display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer',
-              padding: '4px 10px', borderRadius: 7, fontSize: 12,
+              padding: '4px 10px', borderRadius: 3, fontSize: 12,
               background: focoAtivo ? colors.blueSofter : colors.chipBg,
               border: `1px solid ${focoAtivo ? colors.blue : colors.chipBorder}`,
             }}
@@ -277,7 +277,7 @@ export default function RegistroScreen() {
       </div>
 
       {escalacaoAberta && !ehObservacao && (
-        <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 3, padding: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 11, fontWeight: 700, color: colors.muted, letterSpacing: 0.4 }}>DURAÇÃO</span>
             <input
@@ -289,7 +289,7 @@ export default function RegistroScreen() {
               })}
               style={{
                 background: colors.chipBg, color: colors.text, border: `1px solid ${colors.borderStrong}`,
-                borderRadius: 7, padding: '6px 9px', fontSize: 13, width: 74,
+                borderRadius: 3, padding: '6px 9px', fontSize: 13, width: 74,
                 fontFamily: fontDisplay, fontWeight: 700, textAlign: 'center',
               }}
             />
@@ -302,7 +302,7 @@ export default function RegistroScreen() {
                 }
               }}
               style={{
-                padding: '6px 12px', borderRadius: 7, fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                padding: '6px 12px', borderRadius: 3, fontSize: 11, fontWeight: 700, cursor: 'pointer',
                 background: colors.chipBg, border: `1px solid ${colors.chipBorder}`, color: colors.blue,
               }}
             >
@@ -319,7 +319,7 @@ export default function RegistroScreen() {
               const min = sessao.minutosPorJogador?.[j.id];
               return (
                 <div key={j.id} style={{
-                  padding: '7px 10px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+                  padding: '7px 10px', borderRadius: 3, fontSize: 12, fontWeight: 600,
                   background: escalado ? colors.blueSofter : colors.chipBg,
                   border: `1px solid ${escalado ? colors.blue : colors.chipBorder}`,
                   color: escalado ? colors.text : colors.muted,
@@ -340,7 +340,7 @@ export default function RegistroScreen() {
                       })}
                       style={{
                         background: colors.bg, color: colors.text, border: `1px solid ${colors.borderStrong}`,
-                        borderRadius: 5, padding: '3px 5px', fontSize: 12, width: 48,
+                        borderRadius: 3, padding: '3px 5px', fontSize: 12, width: 48,
                         fontFamily: fontDisplay, fontWeight: 700, textAlign: 'center',
                       }}
                     />
@@ -379,7 +379,7 @@ export default function RegistroScreen() {
                 <div
                   onClick={() => dispatch({ type: 'SET_VIDEO_OFFSET', sessaoId: sessao.id, segundos: videoSegundo })}
                   style={{
-                    padding: '7px 12px', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 12,
+                    padding: '7px 12px', borderRadius: 3, cursor: 'pointer', fontWeight: 700, fontSize: 12,
                     background: apitoMarcado ? colors.chipBg : colors.blueSofter,
                     border: `1px solid ${apitoMarcado ? colors.chipBorder : colors.blue}`,
                     color: apitoMarcado ? colors.muted : colors.text,
@@ -401,22 +401,22 @@ export default function RegistroScreen() {
         ) : (
           <div style={{
             display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px',
-            background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 14, flexWrap: 'wrap',
+            background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 3, flexWrap: 'wrap',
           }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: colors.muted, letterSpacing: 0.4 }}>CRONÔMETRO</div>
             <div style={{ fontFamily: fontDisplay, fontSize: 30, fontWeight: 800, letterSpacing: 1, minWidth: 84 }}>
               {formatClock(relogio)}
             </div>
             <div onClick={() => setRelogioAtivo((r) => !r)} style={{
-              padding: '8px 16px', borderRadius: 8, fontWeight: 700, fontSize: 12, cursor: 'pointer',
+              padding: '8px 16px', borderRadius: 3, fontWeight: 700, fontSize: 12, cursor: 'pointer',
               background: relogioAtivo ? colors.chipBg : colors.blue,
               border: `1px solid ${relogioAtivo ? colors.chipBorder : colors.blue}`,
-              color: relogioAtivo ? colors.text : '#0a0e13',
+              color: relogioAtivo ? colors.text : colors.onBlue,
             }}>
               {relogioAtivo ? 'Pausar' : 'Iniciar'}
             </div>
             <div onClick={() => { setRelogio(0); setRelogioAtivo(false); }} style={{
-              padding: '8px 14px', borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: 'pointer',
+              padding: '8px 14px', borderRadius: 3, fontWeight: 600, fontSize: 12, cursor: 'pointer',
               background: colors.chipBg, border: `1px solid ${colors.chipBorder}`, color: colors.muted,
             }}>
               Zerar
@@ -432,17 +432,17 @@ export default function RegistroScreen() {
           {eventButtons.map((b) => (
             <div key={b.key} onClick={() => startBotao(b)} style={{
               display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: colors.cardBgDense,
-              border: `1px solid ${colors.borderAlt}`, borderRadius: 10, cursor: 'pointer',
+              border: `1px solid ${colors.borderAlt}`, borderRadius: 3, cursor: 'pointer',
             }}>
               <div style={{
-                width: 26, height: 26, borderRadius: 6, background: colors.chipBg, border: `1px solid ${colors.borderStrong}`,
+                width: 26, height: 26, borderRadius: 3, background: colors.chipBg, border: `1px solid ${colors.borderStrong}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: colors.blue,
               }}>{b.shortcut}</div>
               <div style={{ fontSize: 13, fontWeight: 600 }}>{b.label}</div>
             </div>
           ))}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', marginTop: 2, color: colors.mutedDark, fontSize: 12 }}>
-            <div style={{ width: 26, height: 26, borderRadius: 6, background: colors.cardBgDense, border: `1px solid ${colors.borderAlt}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>A</div>
+            <div style={{ width: 26, height: 26, borderRadius: 3, background: colors.cardBgDense, border: `1px solid ${colors.borderAlt}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>A</div>
             <div>Alternar time</div>
           </div>
         </div>
@@ -457,7 +457,7 @@ export default function RegistroScreen() {
               <div style={{ display: 'flex', gap: 8 }}>
                 {(['nos', 'adversario'] as Lado[]).map((l) => (
                   <div key={l} onClick={() => setLado(l)} style={{
-                    flex: 1, padding: '10px 12px', borderRadius: 10, textAlign: 'center', cursor: 'pointer',
+                    flex: 1, padding: '10px 12px', borderRadius: 3, textAlign: 'center', cursor: 'pointer',
                     fontSize: 13, fontWeight: 700,
                     background: lado === l ? (l === 'nos' ? colors.blueSofter : colors.goldSoft) : colors.chipBg,
                     border: `1px solid ${lado === l ? corLado(l) : colors.chipBorder}`,
@@ -471,11 +471,11 @@ export default function RegistroScreen() {
                 {eventButtons.map((b) => (
                   <div key={b.key} onClick={() => startBotao(b)} style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '16px 8px',
-                    background: colors.chipBg, border: `1px solid ${colors.chipBorder}`, borderRadius: 14, cursor: 'pointer',
+                    background: colors.chipBg, border: `1px solid ${colors.chipBorder}`, borderRadius: 3, cursor: 'pointer',
                     minHeight: 88, justifyContent: 'center',
                   }}>
                     <div style={{
-                      width: 34, height: 34, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      width: 34, height: 34, borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 11, fontWeight: 800,
                       background: lado === 'nos' ? colors.blueSoft : colors.goldSoft, color: corLado(lado),
                     }}>{b.mono}</div>
@@ -501,7 +501,7 @@ export default function RegistroScreen() {
                 onChange={(e) => setMinutoDraft(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') confirmMinuto(); }}
               />
-              <div onClick={confirmMinuto} style={{ padding: '12px 24px', background: colors.blue, color: '#0a0e13', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer', textAlign: 'center' }}>
+              <div onClick={confirmMinuto} style={{ padding: '12px 24px', background: colors.blue, color: colors.onBlue, borderRadius: 3, fontWeight: 700, fontSize: 14, cursor: 'pointer', textAlign: 'center' }}>
                 Confirmar
               </div>
             </div>
@@ -573,7 +573,7 @@ export default function RegistroScreen() {
                   state.jogadores,
                 )}
               </div>
-              <div onClick={() => setFlow(emptyFlow)} style={{ marginTop: 4, padding: '12px 24px', background: colors.blue, color: '#0a0e13', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+              <div onClick={() => setFlow(emptyFlow)} style={{ marginTop: 4, padding: '12px 24px', background: colors.blue, color: colors.onBlue, borderRadius: 3, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
                 Novo registro
               </div>
             </div>
@@ -588,7 +588,7 @@ export default function RegistroScreen() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {eventos.map((e) => (
                 <div key={e.id} style={{
-                  background: colors.cardBg, border: `1px solid ${colors.logBorder}`, borderRadius: 10,
+                  background: colors.cardBg, border: `1px solid ${colors.logBorder}`, borderRadius: 3,
                   padding: '10px 12px', borderLeft: `3px solid ${corLado(e.lado)}`,
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: colors.mutedDark, marginBottom: 4, gap: 8 }}>

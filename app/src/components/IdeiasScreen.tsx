@@ -89,7 +89,7 @@ export default function IdeiasScreen() {
 
   const input = {
     background: colors.chipBg, color: colors.text, border: `1px solid ${colors.borderStrong}`,
-    borderRadius: 8, padding: '10px 12px', fontSize: 13, fontFamily: 'inherit',
+    borderRadius: 3, padding: '10px 12px', fontSize: 13, fontFamily: 'inherit',
   } as const;
 
   return (
@@ -104,7 +104,7 @@ export default function IdeiasScreen() {
         </div>
         <div
           onClick={() => { setAbrindo((o) => !o); if (abrindo) { setEditando(null); setForm(vazio); } }}
-          style={{ padding: '10px 18px', background: colors.blue, color: '#0a0e13', borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
+          style={{ padding: '10px 18px', background: colors.blue, color: colors.onBlue, borderRadius: 3, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
         >
           {abrindo ? 'Cancelar' : '+ Nova ideia'}
         </div>
@@ -119,7 +119,7 @@ export default function IdeiasScreen() {
               key={s.key}
               onClick={() => setFiltroStatus(on ? 'todos' : s.key)}
               style={{
-                padding: '7px 13px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                padding: '7px 13px', borderRadius: 3, fontSize: 12, fontWeight: 700, cursor: 'pointer',
                 background: on ? e.fundo : colors.chipBg,
                 border: `1px solid ${on ? e.cor : colors.chipBorder}`,
                 color: on ? colors.text : colors.muted,
@@ -140,10 +140,10 @@ export default function IdeiasScreen() {
         <div
           onClick={() => setFiltroArea('todas')}
           style={{
-            padding: '5px 11px', borderRadius: 16, fontSize: 11, fontWeight: 600, cursor: 'pointer',
+            padding: '5px 11px', borderRadius: 3, fontSize: 11, fontWeight: 600, cursor: 'pointer',
             background: filtroArea === 'todas' ? colors.blue : colors.chipBg,
             border: `1px solid ${filtroArea === 'todas' ? colors.blue : colors.chipBorder}`,
-            color: filtroArea === 'todas' ? '#0a0e13' : colors.muted,
+            color: filtroArea === 'todas' ? colors.onBlue : colors.muted,
           }}
         >
           Todas as áreas
@@ -154,10 +154,10 @@ export default function IdeiasScreen() {
             onClick={() => setFiltroArea(a.key)}
             title={a.nota}
             style={{
-              padding: '5px 11px', borderRadius: 16, fontSize: 11, fontWeight: 600, cursor: 'pointer',
+              padding: '5px 11px', borderRadius: 3, fontSize: 11, fontWeight: 600, cursor: 'pointer',
               background: filtroArea === a.key ? colors.blue : colors.chipBg,
               border: `1px solid ${filtroArea === a.key ? colors.blue : colors.chipBorder}`,
-              color: filtroArea === a.key ? '#0a0e13' : colors.muted,
+              color: filtroArea === a.key ? colors.onBlue : colors.muted,
             }}
           >
             {a.label}
@@ -166,7 +166,7 @@ export default function IdeiasScreen() {
       </div>
 
       {abrindo && (
-        <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 14, padding: 18, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 3, padding: 18, display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: colors.muted }}>
             {editando ? 'EDITAR IDEIA' : 'NOVA IDEIA'}
           </div>
@@ -204,7 +204,7 @@ export default function IdeiasScreen() {
               style={{ ...input, flex: 1, minWidth: 180 }}
             />
           </div>
-          <div onClick={submit} style={{ alignSelf: 'flex-start', padding: '10px 20px', background: colors.blue, color: '#0a0e13', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+          <div onClick={submit} style={{ alignSelf: 'flex-start', padding: '10px 20px', background: colors.blue, color: colors.onBlue, borderRadius: 3, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
             {editando ? 'Salvar' : 'Adicionar'}
           </div>
         </div>
@@ -231,7 +231,7 @@ export default function IdeiasScreen() {
                   key={i.id}
                   style={{
                     background: colors.cardBg, border: `1px solid ${colors.border}`,
-                    borderLeft: `3px solid ${e.cor}`, borderRadius: 10, padding: '14px 16px',
+                    borderLeft: `3px solid ${e.cor}`, borderRadius: 3, padding: '14px 16px',
                     display: 'flex', flexDirection: 'column', gap: 8,
                     opacity: s.key === 'descartado' ? 0.62 : 1,
                   }}
@@ -254,7 +254,7 @@ export default function IdeiasScreen() {
 
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', fontSize: 11 }}>
                     <span style={{
-                      padding: '3px 8px', borderRadius: 5, background: colors.chipBg,
+                      padding: '3px 8px', borderRadius: 3, background: colors.chipBg,
                       border: `1px solid ${colors.chipBorder}`, color: colors.muted, fontWeight: 600,
                     }}>
                       {labelArea(i.area)}
@@ -274,7 +274,7 @@ export default function IdeiasScreen() {
                         key={o.key}
                         onClick={() => mover(i, o.key)}
                         style={{
-                          fontSize: 10.5, fontWeight: 600, padding: '4px 9px', borderRadius: 6,
+                          fontSize: 10.5, fontWeight: 600, padding: '4px 9px', borderRadius: 3,
                           background: colors.chipBg, border: `1px dashed ${colors.chipBorder}`,
                           color: colors.mutedDark, cursor: 'pointer',
                         }}

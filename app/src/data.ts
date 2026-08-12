@@ -362,25 +362,19 @@ export function placarDaSessao(eventos: EventoRegistrado[], sessaoId: string): {
   };
 }
 
-/** Blue -> blue -> orange interpolation, colorblind-safe (never red/green as a pair). */
+/** Magnitude is a single hue, light to dark — never a rainbow.
+ *
+ *  The previous version interpolated blue → orange, which spends the identity
+ *  channel on something bar length already shows and reads as two categories
+ *  rather than one scale. Blue and orange still carry meaning in this app; they
+ *  just mean "us" and "them", not "a lot" and "a little".
+ *
+ *  Eight ordered steps, defined per plane in index.css, capped so a single ink
+ *  stays legible on all of them. */
 export function heatColor(v: number, max: number): string {
-  const t = max > 0 ? v / max : 0;
-  const c1 = [23, 50, 74];
-  const c2 = [47, 111, 214];
-  const c3 = [245, 166, 35];
-  let r: number, g: number, b: number;
-  if (t < 0.5) {
-    const k = t / 0.5;
-    r = c1[0] + (c2[0] - c1[0]) * k;
-    g = c1[1] + (c2[1] - c1[1]) * k;
-    b = c1[2] + (c2[2] - c1[2]) * k;
-  } else {
-    const k = (t - 0.5) / 0.5;
-    r = c2[0] + (c3[0] - c2[0]) * k;
-    g = c2[1] + (c3[1] - c2[1]) * k;
-    b = c2[2] + (c3[2] - c2[2]) * k;
-  }
-  return `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
+  if (max <= 0 || v <= 0) return 'var(--heat-0)';
+  const passo = Math.min(7, Math.max(1, Math.ceil((v / max) * 7)));
+  return `var(--heat-${passo})`;
 }
 
 export function formatMinuto(min: number): string {

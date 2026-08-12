@@ -49,17 +49,17 @@ export default function SessoesScreen() {
     <div style={{ padding: '28px 32px', display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 1000, margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <div style={{ fontSize: 18, fontWeight: 700 }}>Sessões</div>
-        <div onClick={() => setOpen((o) => !o)} style={{ padding: '10px 18px', background: colors.blue, color: '#0a0e13', borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+        <div onClick={() => setOpen((o) => !o)} style={{ padding: '10px 18px', background: colors.blue, color: colors.onBlue, borderRadius: 3, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
           {open ? 'Cancelar' : '+ Nova sessão'}
         </div>
       </div>
 
       {open && (
-        <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 14, padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 3, padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ display: 'flex', gap: 10 }}>
             {(['partida', 'treino', 'observacao'] as TipoSessao[]).map((t) => (
               <div key={t} onClick={() => setTipoSessao(t)} style={{
-                padding: '10px 18px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                padding: '10px 18px', borderRadius: 3, fontSize: 13, fontWeight: 600, cursor: 'pointer',
                 background: tipoSessao === t ? colors.blueSofter : colors.chipBg,
                 border: `1px solid ${tipoSessao === t ? colors.blue : colors.chipBorder}`,
               }}>
@@ -77,7 +77,7 @@ export default function SessoesScreen() {
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
                 placeholder={tipoSessao === 'partida' ? 'vs Falcões' : tipoSessao === 'treino' ? 'Treino técnico' : 'Santos x Palmeiras'}
-                style={{ background: colors.chipBg, color: colors.text, border: `1px solid ${colors.borderStrong}`, borderRadius: 8, padding: '10px 12px', fontSize: 13 }}
+                style={{ background: colors.chipBg, color: colors.text, border: `1px solid ${colors.borderStrong}`, borderRadius: 3, padding: '10px 12px', fontSize: 13 }}
               />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -86,7 +86,7 @@ export default function SessoesScreen() {
                 type="date"
                 value={data}
                 onChange={(e) => setData(e.target.value)}
-                style={{ background: colors.chipBg, color: colors.text, border: `1px solid ${colors.borderStrong}`, borderRadius: 8, padding: '10px 12px', fontSize: 13 }}
+                style={{ background: colors.chipBg, color: colors.text, border: `1px solid ${colors.borderStrong}`, borderRadius: 3, padding: '10px 12px', fontSize: 13 }}
               />
             </div>
           </div>
@@ -103,7 +103,7 @@ export default function SessoesScreen() {
                   key={o.v}
                   onClick={() => { if (o.pronto) setModoRegistro(o.v); }}
                   style={{
-                    padding: '12px 14px', borderRadius: 10, cursor: o.pronto ? 'pointer' : 'not-allowed',
+                    padding: '12px 14px', borderRadius: 3, cursor: o.pronto ? 'pointer' : 'not-allowed',
                     background: modoRegistro === o.v ? colors.blueSofter : colors.chipBg,
                     border: `1px solid ${modoRegistro === o.v ? colors.blue : colors.chipBorder}`,
                     opacity: o.pronto ? 1 : 0.45,
@@ -134,19 +134,19 @@ export default function SessoesScreen() {
               ) : (
                 <>
                   <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                    <select value={timeAId} onChange={(e) => setTimeAId(e.target.value)} style={{ background: colors.chipBg, color: colors.text, border: `1px solid ${colors.borderStrong}`, borderRadius: 8, padding: '10px 12px', fontSize: 13, fontWeight: 600 }}>
+                    <select value={timeAId} onChange={(e) => setTimeAId(e.target.value)} style={{ background: colors.chipBg, color: colors.text, border: `1px solid ${colors.borderStrong}`, borderRadius: 3, padding: '10px 12px', fontSize: 13, fontWeight: 600 }}>
                       <option value="">Time A</option>
                       {outros.map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
                     </select>
                     <span style={{ color: colors.mutedDark, fontSize: 13 }}>×</span>
-                    <select value={timeBId} onChange={(e) => setTimeBId(e.target.value)} style={{ background: colors.chipBg, color: colors.text, border: `1px solid ${colors.borderStrong}`, borderRadius: 8, padding: '10px 12px', fontSize: 13, fontWeight: 600 }}>
+                    <select value={timeBId} onChange={(e) => setTimeBId(e.target.value)} style={{ background: colors.chipBg, color: colors.text, border: `1px solid ${colors.borderStrong}`, borderRadius: 3, padding: '10px 12px', fontSize: 13, fontWeight: 600 }}>
                       <option value="">Time B</option>
                       {outros.map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
                     </select>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     <label style={{ fontSize: 11, color: colors.muted, fontWeight: 600 }}>JOGADOR OBSERVADO</label>
-                    <select value={jogadorFocoId} onChange={(e) => setJogadorFocoId(e.target.value)} style={{ background: colors.chipBg, color: colors.text, border: `1px solid ${colors.borderStrong}`, borderRadius: 8, padding: '10px 12px', fontSize: 13, fontWeight: 600, maxWidth: 320 }}>
+                    <select value={jogadorFocoId} onChange={(e) => setJogadorFocoId(e.target.value)} style={{ background: colors.chipBg, color: colors.text, border: `1px solid ${colors.borderStrong}`, borderRadius: 3, padding: '10px 12px', fontSize: 13, fontWeight: 600, maxWidth: 320 }}>
                       <option value="">Nenhum — marcar o jogo inteiro</option>
                       {focoCandidatos.map((j) => (
                         <option key={j.id} value={j.id}>
@@ -175,7 +175,7 @@ export default function SessoesScreen() {
                 const on = escalacao.includes(j.id);
                 return (
                   <div key={j.id} onClick={() => toggleEscalado(j.id)} style={{
-                    padding: '8px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                    padding: '8px 12px', borderRadius: 3, fontSize: 12, fontWeight: 600, cursor: 'pointer',
                     background: on ? colors.blueSofter : colors.chipBg,
                     border: `1px solid ${on ? colors.blue : colors.chipBorder}`,
                     color: on ? colors.text : colors.muted,
@@ -194,7 +194,7 @@ export default function SessoesScreen() {
           </div>
           )}
 
-          <div onClick={handleCreate} style={{ alignSelf: 'flex-start', padding: '10px 20px', background: colors.blue, color: '#0a0e13', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+          <div onClick={handleCreate} style={{ alignSelf: 'flex-start', padding: '10px 20px', background: colors.blue, color: colors.onBlue, borderRadius: 3, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
             Criar e começar a registrar
           </div>
         </div>
@@ -207,12 +207,12 @@ export default function SessoesScreen() {
             onClick={() => navigate(`/registro/${s.id}`)}
             style={{
               display: 'flex', alignItems: 'center', gap: 14, background: colors.cardBg, border: `1px solid ${colors.border}`,
-              borderRadius: 12, padding: '14px 18px', cursor: 'pointer', flexWrap: 'wrap',
+              borderRadius: 3, padding: '14px 18px', cursor: 'pointer', flexWrap: 'wrap',
             }}
           >
             <div style={{
-              fontSize: 10, fontWeight: 800, letterSpacing: 0.5, padding: '4px 8px', borderRadius: 6,
-              background: s.tipoSessao === 'observacao' ? 'rgba(245,166,35,0.14)' : colors.blueSoft,
+              fontSize: 10, fontWeight: 800, letterSpacing: 0.5, padding: '4px 8px', borderRadius: 3,
+              background: s.tipoSessao === 'observacao' ? colors.goldSoft : colors.blueSoft,
               color: s.tipoSessao === 'observacao' ? colors.gold : colors.blue,
             }}>
               {s.tipoSessao === 'partida' ? 'PARTIDA' : s.tipoSessao === 'treino' ? 'TREINO' : 'OBSERVAÇÃO'}

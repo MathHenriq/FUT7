@@ -64,11 +64,11 @@ export function ExerciciosBar({ sessaoId, ativoId, onSelecionar }: BarProps) {
 
   const input = {
     background: colors.chipBg, color: colors.text, border: `1px solid ${colors.borderStrong}`,
-    borderRadius: 8, padding: '9px 11px', fontSize: 13,
+    borderRadius: 3, padding: '9px 11px', fontSize: 13,
   } as const;
 
   return (
-    <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 3, padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: colors.muted, letterSpacing: 0.4 }}>EXERCÍCIO ATIVO</div>
         <div style={{ fontSize: 11, color: colors.mutedDark }}>
@@ -80,7 +80,7 @@ export function ExerciciosBar({ sessaoId, ativoId, onSelecionar }: BarProps) {
         <div
           onClick={() => onSelecionar(null)}
           style={{
-            padding: '8px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+            padding: '8px 12px', borderRadius: 3, fontSize: 12, fontWeight: 600, cursor: 'pointer',
             background: ativoId === null ? colors.blueSofter : colors.chipBg,
             border: `1px solid ${ativoId === null ? colors.blue : colors.chipBorder}`,
             color: ativoId === null ? colors.text : colors.muted,
@@ -95,7 +95,7 @@ export function ExerciciosBar({ sessaoId, ativoId, onSelecionar }: BarProps) {
               key={x.id}
               onClick={() => onSelecionar(x.id)}
               style={{
-                padding: '8px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                padding: '8px 12px', borderRadius: 3, fontSize: 12, fontWeight: 600, cursor: 'pointer',
                 background: on ? colors.blueSofter : colors.chipBg,
                 border: `1px solid ${on ? colors.blue : colors.chipBorder}`,
                 color: on ? colors.text : colors.muted,
@@ -119,7 +119,7 @@ export function ExerciciosBar({ sessaoId, ativoId, onSelecionar }: BarProps) {
         <div
           onClick={() => setAbrindo((o) => !o)}
           style={{
-            padding: '8px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+            padding: '8px 12px', borderRadius: 3, fontSize: 12, fontWeight: 700, cursor: 'pointer',
             background: colors.chipBg, border: `1px dashed ${colors.borderStrong}`, color: colors.blue,
           }}
         >
@@ -152,7 +152,7 @@ export function ExerciciosBar({ sessaoId, ativoId, onSelecionar }: BarProps) {
             type="number"
             style={{ ...input, width: 76 }}
           />
-          <div onClick={criar} style={{ padding: '9px 16px', background: colors.blue, color: '#0a0e13', borderRadius: 8, fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+          <div onClick={criar} style={{ padding: '9px 16px', background: colors.blue, color: colors.onBlue, borderRadius: 3, fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
             Adicionar
           </div>
         </div>
@@ -194,11 +194,11 @@ export function MetricasFisicas({ sessaoId, jogadores }: { sessaoId: string; jog
 
   const cell = {
     background: colors.chipBg, color: colors.text, border: `1px solid ${colors.borderStrong}`,
-    borderRadius: 6, padding: '6px 8px', fontSize: 13, width: 84, fontFamily: fontDisplay, fontWeight: 700,
+    borderRadius: 3, padding: '6px 8px', fontSize: 13, width: 84, fontFamily: fontDisplay, fontWeight: 700,
   } as const;
 
   return (
-    <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 14 }}>
+    <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 3, padding: 14 }}>
       <div
         onClick={() => setAberto((o) => !o)}
         style={{ display: 'flex', alignItems: 'baseline', gap: 10, cursor: 'pointer', flexWrap: 'wrap' }}
@@ -283,7 +283,7 @@ export function ResumoExercicios({ sessaoId }: { sessaoId: string }) {
   });
 
   return (
-    <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 14 }}>
+    <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 3, padding: 14 }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: colors.muted, letterSpacing: 0.4, marginBottom: 10 }}>
         RESUMO POR EXERCÍCIO
       </div>

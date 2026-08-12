@@ -37,7 +37,7 @@ export function prioridade(i: Ideia): number {
 
 /** Bumped whenever the seeded backlog gains items, so they reach installs that already
  *  have a stored list — without touching anything the user edited or moved. */
-export const SEED_IDEIAS_VERSAO = 2;
+export const SEED_IDEIAS_VERSAO = 3;
 
 type Semente = Omit<Ideia, 'id' | 'criadoEm' | 'atualizadoEm'>;
 
@@ -58,7 +58,7 @@ const sementes: Semente[] = [
   {
     titulo: 'Modo foco: rastrear um jogador',
     descricao: 'Escolher um jogador e registrar tudo que ele faz durante a partida gravada — perde, recupera, passa, finaliza, cria chance. A marcação some do resto do jogo e fica só nele, o que deixa a codificação muito mais rápida e é exatamente como o olheiro trabalha.',
-    area: 'scouting', status: 'ideia', impacto: 3, esforco: 2,
+    area: 'scouting', status: 'feito', impacto: 3, esforco: 2,
     referencia: 'Spiideo AutoFollow — seguir o jogador, não a bola',
   },
   {
@@ -115,7 +115,7 @@ const sementes: Semente[] = [
   {
     titulo: 'Minutos jogados por jogador',
     descricao: 'Sem isso nenhuma métrica normaliza e todo ranking premia quem joga mais, não quem joga melhor. Destrava o "por 40" e o tempo efetivo. É o buraco que mais contamina o resto do app hoje.',
-    area: 'codificacao', status: 'ideia', impacto: 3, esforco: 1,
+    area: 'codificacao', status: 'feito', impacto: 3, esforco: 1,
     referencia: 'Wyscout — normalização por 90',
   },
   {
@@ -205,13 +205,13 @@ const sementes: Semente[] = [
   {
     titulo: 'Separação visual dos três modos',
     descricao: 'Ao vivo, estúdio e análise têm ergonomias diferentes: polegar na beira do campo, teclado na mesa, leitura densa. Hoje têm a mesma cara — e é por isso que parece tudo junto. Densidades diferentes é a correção real; paleta é acabamento em cima disso.',
-    area: 'plataforma', status: 'ideia', impacto: 3, esforco: 3,
+    area: 'plataforma', status: 'feito', impacto: 3, esforco: 3,
     referencia: 'Wyscout · FotMob',
   },
   {
     titulo: 'Identidade visual própria',
     descricao: 'Sem envolver marca de terceiros, o app precisa de nome e paleta próprios. Fica pendente da decisão de nome.',
-    area: 'plataforma', status: 'estudando', impacto: 2, esforco: 2,
+    area: 'plataforma', status: 'fazendo', impacto: 2, esforco: 2,
     referencia: 'Decisão pendente',
   },
 

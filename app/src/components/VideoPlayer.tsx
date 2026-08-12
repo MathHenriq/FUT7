@@ -155,7 +155,7 @@ export default function VideoPlayer({
         style={{
           border: `2px dashed ${arrastando ? colors.blue : colors.borderStrong}`,
           background: arrastando ? colors.blueSoft : colors.cardBgAlt,
-          borderRadius: 14, padding: '38px 24px', textAlign: 'center',
+          borderRadius: 3, padding: '38px 24px', textAlign: 'center',
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
         }}
       >
@@ -175,7 +175,7 @@ export default function VideoPlayer({
         />
         <div
           onClick={() => inputRef.current?.click()}
-          style={{ marginTop: 4, padding: '10px 20px', background: colors.blue, color: '#0a0e13', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
+          style={{ marginTop: 4, padding: '10px 20px', background: colors.blue, color: colors.onBlue, borderRadius: 3, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
         >
           Escolher arquivo
         </div>
@@ -187,7 +187,7 @@ export default function VideoPlayer({
   const pct = duracao > 0 ? (tempo / duracao) * 100 : 0;
 
   return (
-    <div style={{ background: colors.cardBgAlt, border: `1px solid ${colors.border}`, borderRadius: 14, overflow: 'hidden' }}>
+    <div style={{ background: colors.cardBgAlt, border: `1px solid ${colors.border}`, borderRadius: 3, overflow: 'hidden' }}>
       <video
         ref={videoRef}
         src={src}
@@ -231,7 +231,7 @@ export default function VideoPlayer({
             key={rot as string}
             onClick={() => pular(d as number)}
             style={{
-              padding: '5px 9px', borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: 'pointer',
+              padding: '5px 9px', borderRadius: 3, fontSize: 11, fontWeight: 700, cursor: 'pointer',
               background: colors.chipBg, border: `1px solid ${colors.chipBorder}`, color: colors.muted,
             }}
           >
@@ -244,7 +244,7 @@ export default function VideoPlayer({
               key={v}
               onClick={() => setVelocidade(v)}
               style={{
-                padding: '5px 8px', borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                padding: '5px 8px', borderRadius: 3, fontSize: 11, fontWeight: 700, cursor: 'pointer',
                 background: velocidade === v ? colors.blueSofter : colors.chipBg,
                 border: `1px solid ${velocidade === v ? colors.blue : colors.chipBorder}`,
                 color: velocidade === v ? colors.text : colors.muted,

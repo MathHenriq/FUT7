@@ -97,7 +97,7 @@ export default function ElencoScreen() {
 
   const input = {
     background: colors.chipBg, color: colors.text, border: `1px solid ${colors.borderStrong}`,
-    borderRadius: 8, padding: '10px 12px', fontSize: 13, fontFamily: 'inherit',
+    borderRadius: 3, padding: '10px 12px', fontSize: 13, fontFamily: 'inherit',
   } as const;
 
   return (
@@ -118,7 +118,7 @@ export default function ElencoScreen() {
               key={t.id}
               onClick={() => { setTimeSel(t.id); setEditando(null); setForm(vazio); }}
               style={{
-                padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                padding: '8px 14px', borderRadius: 3, fontSize: 13, fontWeight: 600, cursor: 'pointer',
                 background: on ? colors.blueSofter : colors.chipBg,
                 border: `1px solid ${on ? colors.blue : colors.chipBorder}`,
                 color: on ? colors.text : colors.muted,
@@ -136,7 +136,7 @@ export default function ElencoScreen() {
         <div
           onClick={() => setGerindoTimes((g) => !g)}
           style={{
-            padding: '8px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+            padding: '8px 12px', borderRadius: 3, fontSize: 12, fontWeight: 700, cursor: 'pointer',
             background: colors.chipBg, border: `1px dashed ${colors.borderStrong}`, color: colors.blue,
           }}
         >
@@ -145,7 +145,7 @@ export default function ElencoScreen() {
       </div>
 
       {gerindoTimes && (
-        <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 3, padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <input
               value={novoTime}
@@ -154,7 +154,7 @@ export default function ElencoScreen() {
               placeholder="Nome do clube a observar"
               style={{ ...input, flex: 1, minWidth: 220 }}
             />
-            <div onClick={criarTime} style={{ padding: '10px 20px', background: colors.blue, color: '#0a0e13', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+            <div onClick={criarTime} style={{ padding: '10px 20px', background: colors.blue, color: colors.onBlue, borderRadius: 3, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
               Criar
             </div>
           </div>
@@ -168,7 +168,7 @@ export default function ElencoScreen() {
               {time.ehMeuTime ? (
                 <span style={{ fontSize: 11, color: colors.mutedDark }}>O seu clube não pode ser removido.</span>
               ) : (
-                <div onClick={removerTime} style={{ padding: '10px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', background: colors.chipBg, border: `1px solid ${colors.chipBorder}`, color: colors.gold }}>
+                <div onClick={removerTime} style={{ padding: '10px 16px', borderRadius: 3, fontSize: 12, fontWeight: 600, cursor: 'pointer', background: colors.chipBg, border: `1px solid ${colors.chipBorder}`, color: colors.gold }}>
                   Remover clube
                 </div>
               )}
@@ -177,7 +177,7 @@ export default function ElencoScreen() {
         </div>
       )}
 
-      <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 14, padding: 18, display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 3, padding: 18, display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: colors.muted }}>
           {editando ? 'EDITAR JOGADOR' : `ADICIONAR ${ehMeu ? 'AO ELENCO' : 'AOS OBSERVADOS'}`}
         </div>
@@ -220,11 +220,11 @@ export default function ElencoScreen() {
           />
         )}
         <div style={{ display: 'flex', gap: 10 }}>
-          <div onClick={submit} style={{ padding: '10px 20px', background: colors.blue, color: '#0a0e13', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+          <div onClick={submit} style={{ padding: '10px 20px', background: colors.blue, color: colors.onBlue, borderRadius: 3, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
             {editando ? 'Salvar' : 'Adicionar'}
           </div>
           {editando && (
-            <div onClick={() => { setEditando(null); setForm(vazio); }} style={{ padding: '10px 20px', background: colors.chipBg, border: `1px solid ${colors.chipBorder}`, borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer', color: colors.muted }}>
+            <div onClick={() => { setEditando(null); setForm(vazio); }} style={{ padding: '10px 20px', background: colors.chipBg, border: `1px solid ${colors.chipBorder}`, borderRadius: 3, fontWeight: 600, fontSize: 13, cursor: 'pointer', color: colors.muted }}>
               Cancelar
             </div>
           )}
@@ -235,7 +235,7 @@ export default function ElencoScreen() {
         {jogadores.map((j) => (
           <div key={j.id} style={{
             display: 'flex', alignItems: 'center', gap: 14, background: colors.cardBg,
-            border: `1px solid ${colors.border}`, borderRadius: 12, padding: '12px 16px',
+            border: `1px solid ${colors.border}`, borderRadius: 3, padding: '12px 16px',
             opacity: j.ativo ? 1 : 0.5, flexWrap: 'wrap',
           }}>
             <div style={{
@@ -258,14 +258,14 @@ export default function ElencoScreen() {
               <div style={{ fontSize: 11, color: colors.mutedDark }}>{j.idade} anos</div>
             )}
             <div style={{
-              fontSize: 10, fontWeight: 800, letterSpacing: 0.5, padding: '4px 8px', borderRadius: 6,
+              fontSize: 10, fontWeight: 800, letterSpacing: 0.5, padding: '4px 8px', borderRadius: 3,
               background: colors.blueSoft, color: colors.blue,
             }}>
               {curtoPosicao(j.posicao)}
             </div>
             {j.vinculo === 'observado' && (
               <div style={{
-                fontSize: 10, fontWeight: 800, letterSpacing: 0.5, padding: '4px 8px', borderRadius: 6,
+                fontSize: 10, fontWeight: 800, letterSpacing: 0.5, padding: '4px 8px', borderRadius: 3,
                 background: colors.goldSoft, color: colors.gold,
               }}>
                 OBSERVADO

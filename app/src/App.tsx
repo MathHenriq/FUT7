@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom';
 import Header from './components/Header';
+import Plano from './components/Plano';
 import SessoesScreen from './components/SessoesScreen';
 import RegistroScreen from './components/RegistroScreen';
 import ElencoScreen from './components/ElencoScreen';
@@ -18,17 +19,24 @@ export default function App() {
   return (
     <AppProvider>
       <BrowserRouter>
-        <div style={{ minHeight: '100vh', width: '100%', background: '#05070a', color: '#eef2f6' }}>
+        {/* The shell is always the operating plane: it carries the app identity and
+            the session you are inside. Screens declare their own plane below. */}
+        <div data-plano="escuro" style={{ minHeight: '100vh', width: '100%', display: 'flex', flexDirection: 'column' }}>
           <Header />
           <Routes>
             <Route path="/" element={<Navigate to="/sessoes" replace />} />
-            <Route path="/sessoes" element={<SessoesScreen />} />
-            <Route path="/registro/:sessaoId" element={<RegistroRoute />} />
-            <Route path="/elenco" element={<ElencoScreen />} />
-            <Route path="/jogador/:jogadorId" element={<JogadorScreen />} />
-            <Route path="/campo" element={<CampoScreen />} />
-            <Route path="/dashboard" element={<DashboardScreen />} />
-            <Route path="/ideias" element={<IdeiasScreen />} />
+
+            {/* Operating: tagging beside the pitch, video, pitch coordinates. */}
+            <Route path="/registro/:sessaoId" element={<Plano tipo="escuro"><RegistroRoute /></Plano>} />
+            <Route path="/campo" element={<Plano tipo="escuro"><CampoScreen /></Plano>} />
+
+            {/* Reading: dense tables, comparison, reports. */}
+            <Route path="/sessoes" element={<Plano tipo="claro"><SessoesScreen /></Plano>} />
+            <Route path="/elenco" element={<Plano tipo="claro"><ElencoScreen /></Plano>} />
+            <Route path="/jogador/:jogadorId" element={<Plano tipo="claro"><JogadorScreen /></Plano>} />
+            <Route path="/dashboard" element={<Plano tipo="claro"><DashboardScreen /></Plano>} />
+            <Route path="/ideias" element={<Plano tipo="claro"><IdeiasScreen /></Plano>} />
+
             <Route path="*" element={<Navigate to="/sessoes" replace />} />
           </Routes>
         </div>

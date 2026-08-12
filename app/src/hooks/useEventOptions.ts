@@ -1,3 +1,4 @@
+import { colors } from '../colors';
 import { useMemo } from 'react';
 import {
   cardColors, comoPerdeuOptions, comoRecuperouOptions, detailOptions, faltaTipoOptions,
@@ -43,7 +44,7 @@ export function useEventOptions(
 
     const cardColorItems: FlowOption[] = cardColors.map((c) => ({
       key: c.key, label: c.label, selected: data.cardColor === c.key,
-      dot: c.key === 'amarelo' ? '#f2c94c' : '#e15554', onClick: () => select('cardColor', c.key),
+      dot: c.key === 'amarelo' ? colors.cartaoAmarelo : colors.cartaoVermelho, onClick: () => select('cardColor', c.key),
     }));
 
     const playerItems: FlowOption[] = ativos.map((p) => ({

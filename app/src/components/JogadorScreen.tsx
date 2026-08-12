@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { colors, fontDisplay } from '../colors';
+import { colors, fontDisplay, rotulo } from '../colors';
 import { heatColor, labelPosicao, setorIndex, setorLabels } from '../data';
 import GraficoLinha from './GraficoLinha';
 import { MINUTOS_REFERENCIA, metricasDef, useJogadorStats, type MetricaKey } from '../hooks/useJogadorStats';
@@ -58,7 +58,7 @@ export default function JogadorScreen() {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
         <div style={{
-          width: 56, height: 56, borderRadius: 12, background: colors.blueSoft,
+          width: 56, height: 56, borderRadius: 3, background: colors.blueSoft,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontFamily: fontDisplay, fontSize: 26, fontWeight: 800, color: colors.blue,
         }}>
@@ -79,8 +79,8 @@ export default function JogadorScreen() {
           const d = metricasDef.find((m) => m.key === k)!;
           const v = stats.agregar(k);
           return (
-            <div key={k} style={{ background: colors.cardBgDense, border: `1px solid ${colors.borderAlt}`, borderRadius: 12, padding: '14px 16px' }}>
-              <div style={{ fontSize: 11, color: colors.muted, fontWeight: 600, marginBottom: 4 }}>{d.label}</div>
+            <div key={k} style={{ background: colors.cardBgDense, border: `1px solid ${colors.borderAlt}`, borderRadius: 3, padding: '14px 16px' }}>
+              <div style={{ ...rotulo, color: colors.mutedDark, marginBottom: 5 }}>{d.label}</div>
               <div style={{ fontFamily: fontDisplay, fontSize: 28, fontWeight: 800 }}>
                 {v === null ? '—' : `${v.toFixed(d.decimais ?? 0)}${d.sufixo ?? ''}`}
               </div>
@@ -103,7 +103,7 @@ export default function JogadorScreen() {
 
       {stats.sessoesComMinuto === 0 && stats.pontos.length > 0 && (
         <div style={{
-          background: colors.goldSoft, borderLeft: `3px solid ${colors.gold}`, borderRadius: 8,
+          background: colors.goldSoft, borderLeft: `3px solid ${colors.gold}`, borderRadius: 3,
           padding: '12px 16px', fontSize: 12.5, color: colors.mutedLight, lineHeight: 1.5,
         }}>
           Nenhum minuto registrado ainda, então não dá para calcular taxa por {MINUTOS_REFERENCIA} minutos —
@@ -112,7 +112,7 @@ export default function JogadorScreen() {
         </div>
       )}
 
-      <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 14, padding: 20 }}>
+      <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 3, padding: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
           <div>
             <div style={{ fontSize: 13, fontWeight: 700 }}>Evolução</div>
@@ -123,7 +123,7 @@ export default function JogadorScreen() {
           <div style={{ display: 'flex', gap: 4 }}>
             {([['todas', 'Todas'], ['partida', 'Partidas'], ['treino', 'Treinos']] as const).map(([k, l]) => (
               <div key={k} onClick={() => setFiltroTipo(k)} style={{
-                padding: '6px 12px', borderRadius: 7, fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                padding: '6px 12px', borderRadius: 3, fontSize: 11, fontWeight: 700, cursor: 'pointer',
                 background: filtroTipo === k ? colors.blueSofter : colors.chipBg,
                 border: `1px solid ${filtroTipo === k ? colors.blue : colors.chipBorder}`,
                 color: filtroTipo === k ? colors.text : colors.muted,
@@ -137,10 +137,10 @@ export default function JogadorScreen() {
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
           {metricasDef.map((m) => (
             <div key={m.key} onClick={() => setMetrica(m.key)} style={{
-              padding: '6px 12px', borderRadius: 18, fontSize: 11, fontWeight: 600, cursor: 'pointer',
+              padding: '6px 12px', borderRadius: 3, fontSize: 11, fontWeight: 600, cursor: 'pointer',
               background: metrica === m.key ? colors.blue : colors.chipBg,
               border: `1px solid ${metrica === m.key ? colors.blue : colors.chipBorder}`,
-              color: metrica === m.key ? '#0a0e13' : colors.muted,
+              color: metrica === m.key ? colors.onBlue : colors.muted,
             }}>
               {m.label}
             </div>
@@ -157,7 +157,7 @@ export default function JogadorScreen() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: 20 }}>
-        <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 14, padding: 20 }}>
+        <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 3, padding: 20 }}>
           <div style={{ fontSize: 13, fontWeight: 700 }}>De onde finaliza</div>
           <div style={{ fontSize: 12, color: colors.mutedDark, marginTop: 2, marginBottom: 14 }}>
             {stats.finalizacoes.length} finalizações · ataque no topo
@@ -165,10 +165,10 @@ export default function JogadorScreen() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 5, maxWidth: 260 }}>
             {heat.map((h, i) => (
               <div key={i} title={h.label} style={{
-                aspectRatio: '1', borderRadius: 7, background: h.bg,
+                aspectRatio: '1', borderRadius: 3, background: h.bg,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
-                <span style={{ fontFamily: fontDisplay, fontSize: 17, fontWeight: 800, color: '#fff' }}>{h.v}</span>
+                <span style={{ fontFamily: fontDisplay, fontSize: 17, fontWeight: 800, color: colors.heatTinta }}>{h.v}</span>
               </div>
             ))}
           </div>
@@ -177,7 +177,7 @@ export default function JogadorScreen() {
           </div>
         </div>
 
-        <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 14, padding: 20 }}>
+        <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 3, padding: 20 }}>
           <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 14 }}>Sessão a sessão</div>
           {pontosFiltrados.length === 0 ? (
             <div style={{ fontSize: 12, color: colors.mutedDark }}>Nenhuma sessão registrada.</div>

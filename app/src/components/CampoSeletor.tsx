@@ -52,7 +52,7 @@ export default function CampoSeletor({ cols, rows, valor, origem, onPick }: Prop
     return { x: px(0.5 - g.goalAreaWidth / 2), y: py(y + depth), w: px(g.goalAreaWidth), h: depth * H };
   };
 
-  const linha = { stroke: 'rgba(238,242,246,0.30)', strokeWidth: 1.6, fill: 'none' } as const;
+  const linha = { stroke: 'var(--gramado-linha)', strokeWidth: 1.6, fill: 'none' } as const;
 
   return (
     <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
@@ -61,22 +61,22 @@ export default function CampoSeletor({ cols, rows, valor, origem, onPick }: Prop
         viewBox={`0 0 ${W} ${H}`}
         onPointerDown={handlePointerDown}
         style={{
-          width: '100%', maxWidth: 300, maxHeight: '52vh', aspectRatio: `${W} / ${H}`, borderRadius: 12,
+          width: '100%', maxWidth: 300, maxHeight: '52vh', aspectRatio: `${W} / ${H}`, borderRadius: 3,
           border: `1px solid ${colors.borderAlt}`, cursor: 'crosshair', touchAction: 'manipulation',
           display: 'block',
         }}
       >
         <defs>
           <linearGradient id="gramado" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#13211a" />
-            <stop offset="100%" stopColor="#0d1713" />
+            <stop offset="0%" stopColor="var(--gramado-a)" />
+            <stop offset="100%" stopColor="var(--gramado-b)" />
           </linearGradient>
         </defs>
 
         <rect x={0} y={0} width={W} height={H} fill="url(#gramado)" />
         {stripes.map((i) => (
           i % 2 === 0 ? (
-            <rect key={i} x={0} y={(i * H) / stripes.length} width={W} height={H / stripes.length} fill="rgba(255,255,255,0.014)" />
+            <rect key={i} x={0} y={(i * H) / stripes.length} width={W} height={H / stripes.length} fill="var(--gramado-faixa)" />
           ) : null
         ))}
 
@@ -84,7 +84,7 @@ export default function CampoSeletor({ cols, rows, valor, origem, onPick }: Prop
         <rect x={6} y={6} width={W - 12} height={H - 12} {...linha} />
         <line x1={6} y1={H / 2} x2={W - 6} y2={H / 2} {...linha} />
         <circle cx={W / 2} cy={H / 2} r={g.centerCircleR * W} {...linha} />
-        <circle cx={W / 2} cy={H / 2} r={2.5} fill="rgba(238,242,246,0.35)" />
+        <circle cx={W / 2} cy={H / 2} r={2.5} fill="var(--gramado-marca)" />
 
         {[true, false].map((topo) => {
           const a = areaTop(topo);
@@ -95,10 +95,10 @@ export default function CampoSeletor({ cols, rows, valor, origem, onPick }: Prop
             <g key={String(topo)}>
               <rect x={a.x} y={a.y} width={a.w} height={a.h} {...linha} />
               <rect x={p.x} y={p.y} width={p.w} height={p.h} {...linha} />
-              <circle cx={W / 2} cy={spotY} r={2.5} fill="rgba(238,242,246,0.35)" />
+              <circle cx={W / 2} cy={spotY} r={2.5} fill="var(--gramado-marca)" />
               <line
                 x1={px(0.5 - g.goalWidth / 2)} y1={golY} x2={px(0.5 + g.goalWidth / 2)} y2={golY}
-                stroke={topo ? colors.blue : 'rgba(238,242,246,0.55)'} strokeWidth={4} strokeLinecap="round"
+                stroke={topo ? colors.blue : 'var(--gramado-marca)'} strokeWidth={4} strokeLinecap="round"
               />
             </g>
           );
@@ -107,18 +107,18 @@ export default function CampoSeletor({ cols, rows, valor, origem, onPick }: Prop
         {/* Grade de setores: guia visual, não destino do clique */}
         {Array.from({ length: cols - 1 }, (_, i) => (
           <line key={`c${i}`} x1={px((i + 1) / cols)} y1={6} x2={px((i + 1) / cols)} y2={H - 6}
-            stroke="rgba(79,142,247,0.16)" strokeWidth={1} strokeDasharray="4 5" />
+            stroke="var(--acento-fraco2)" strokeWidth={1} strokeDasharray="4 5" />
         ))}
         {Array.from({ length: rows - 1 }, (_, i) => (
           <line key={`r${i}`} x1={6} y1={py((i + 1) / rows)} x2={W - 6} y2={py((i + 1) / rows)}
-            stroke="rgba(79,142,247,0.16)" strokeWidth={1} strokeDasharray="4 5" />
+            stroke="var(--acento-fraco2)" strokeWidth={1} strokeDasharray="4 5" />
         ))}
 
         {cells.map((s) => (
           <rect
             key={s.index}
             x={px(s.x0)} y={py(s.y1)} width={px(s.x1 - s.x0)} height={(s.y1 - s.y0) * H}
-            fill={hover === s.index ? 'rgba(79,142,247,0.10)' : 'transparent'}
+            fill={hover === s.index ? colors.blueSoft : 'transparent'}
             onPointerEnter={() => setHover(s.index)}
             onPointerLeave={() => setHover((h) => (h === s.index ? null : h))}
           />
@@ -145,8 +145,8 @@ export default function CampoSeletor({ cols, rows, valor, origem, onPick }: Prop
 
         {valor && (
           <g>
-            <circle cx={px(valor.x)} cy={py(valor.y)} r={11} fill="rgba(79,142,247,0.20)" />
-            <circle cx={px(valor.x)} cy={py(valor.y)} r={5.5} fill={colors.blue} stroke="#0a0e13" strokeWidth={1.5} />
+            <circle cx={px(valor.x)} cy={py(valor.y)} r={11} fill="var(--acento-fraco2)" />
+            <circle cx={px(valor.x)} cy={py(valor.y)} r={5.5} fill={colors.blue} stroke={colors.onBlue} strokeWidth={1.5} />
           </g>
         )}
 

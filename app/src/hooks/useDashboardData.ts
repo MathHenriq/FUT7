@@ -1,3 +1,4 @@
+import { colors } from '../colors';
 import { useMemo } from 'react';
 import { useApp } from '../store';
 import { ehGol, heatColor, linhasDaGrade, originOptions, setorIndex, setorLabels } from '../data';
@@ -55,7 +56,7 @@ export function useDashboardData(lado: Lado) {
         x: n > 1 ? PAD_X + (i * (CHART_W - 2 * PAD_X)) / (n - 1) : CHART_W / 2,
         y: CHART_H - PAD_Y - (v / maxVal) * (CHART_H - 2 * PAD_Y),
         r: highlighted ? 6 : 4,
-        fill: highlighted ? '#f5a623' : '#4f8ef7',
+        fill: highlighted ? colors.gold : colors.blue,
       };
     });
     const chartPath = chartPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');

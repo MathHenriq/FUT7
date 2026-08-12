@@ -19,7 +19,7 @@ function texturaDoCampo(): THREE.CanvasTexture {
   const w = c.width;
   const h = c.height;
 
-  ctx.fillStyle = '#1c3327';
+  ctx.fillStyle = '#1b2b22';
   ctx.fillRect(0, 0, w, h);
   const faixas = 10;
   for (let i = 0; i < faixas; i++) {

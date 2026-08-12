@@ -148,7 +148,7 @@ export default function GraficoLinha({
           position: 'absolute', top: -4, left: 0, right: 0, textAlign: 'center',
           fontSize: 11, color: colors.text, pointerEvents: 'none',
         }}>
-          <span style={{ background: colors.cardBgDense, border: `1px solid ${colors.borderAlt}`, borderRadius: 6, padding: '3px 8px' }}>
+          <span style={{ background: colors.cardBgDense, border: `1px solid ${colors.borderAlt}`, borderRadius: 3, padding: '3px 8px' }}>
             <strong style={{ fontFamily: fontDisplay, fontSize: 13 }}>{fmt(pontos[ativo].valor as number)}</strong>
             <span style={{ color: colors.mutedDark, marginLeft: 6 }}>{pontos[ativo].label}</span>
             {pontos[ativo].sub && <span style={{ color: colors.mutedDark, marginLeft: 6 }}>· {pontos[ativo].sub}</span>}

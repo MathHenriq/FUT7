@@ -65,7 +65,7 @@ export default function CampoScreen() {
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           {(['nos', 'adversario'] as Lado[]).map((l) => (
             <div key={l} onClick={() => setLado(l)} style={{
-              padding: '8px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+              padding: '8px 14px', borderRadius: 3, fontSize: 12, fontWeight: 700, cursor: 'pointer',
               background: lado === l ? (l === 'nos' ? colors.blueSofter : colors.goldSoft) : colors.chipBg,
               border: `1px solid ${lado === l ? (l === 'nos' ? colors.blue : colors.gold) : colors.chipBorder}`,
               color: lado === l ? colors.text : colors.muted,
@@ -76,7 +76,7 @@ export default function CampoScreen() {
           <div style={{ display: 'flex', gap: 4, marginLeft: 6 }}>
             {(['3d', '2d'] as const).map((m) => (
               <div key={m} onClick={() => setModo(m)} style={{
-                padding: '8px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                padding: '8px 12px', borderRadius: 3, fontSize: 12, fontWeight: 700, cursor: 'pointer',
                 background: modo === m ? colors.blueSofter : colors.chipBg,
                 border: `1px solid ${modo === m ? colors.blue : colors.chipBorder}`,
                 color: modo === m ? colors.text : colors.muted, textTransform: 'uppercase',
@@ -88,7 +88,7 @@ export default function CampoScreen() {
           <div style={{ display: 'flex', gap: 4 }}>
             {([9, 12] as GradeZonas[]).map((gz) => (
               <div key={gz} onClick={() => setGradeZonas(gz)} style={{
-                padding: '8px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                padding: '8px 12px', borderRadius: 3, fontSize: 12, fontWeight: 700, cursor: 'pointer',
                 background: state.config.gradeZonas === gz ? colors.blueSofter : colors.chipBg,
                 border: `1px solid ${state.config.gradeZonas === gz ? colors.blue : colors.chipBorder}`,
                 color: state.config.gradeZonas === gz ? colors.text : colors.muted,
@@ -103,10 +103,10 @@ export default function CampoScreen() {
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         {filtros.map((f) => (
           <div key={f.key} onClick={() => { setFiltro(f.key); setSelecionado(null); }} style={{
-            padding: '8px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+            padding: '8px 14px', borderRadius: 3, fontSize: 12, fontWeight: 600, cursor: 'pointer',
             background: filtro === f.key ? colors.blue : colors.chipBg,
             border: `1px solid ${filtro === f.key ? colors.blue : colors.chipBorder}`,
-            color: filtro === f.key ? '#0a0e13' : colors.muted,
+            color: filtro === f.key ? colors.onBlue : colors.muted,
           }}>
             {f.label}
           </div>
@@ -114,7 +114,7 @@ export default function CampoScreen() {
       </div>
 
       <div style={{
-        background: colors.cardBgAlt, border: `1px solid ${colors.border}`, borderRadius: 16,
+        background: colors.cardBgAlt, border: `1px solid ${colors.border}`, borderRadius: 3,
         overflow: 'hidden', position: 'relative',
       }}>
         {modo === '3d' ? (
@@ -142,12 +142,12 @@ export default function CampoScreen() {
                   onClick={() => setSelecionado((s) => (s === c.index ? null : c.index))}
                   title={c.label}
                   style={{
-                    aspectRatio: '1', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    aspectRatio: '1', borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center',
                     background: cores[i], cursor: 'pointer',
                     outline: selecionado === c.index ? `2px solid ${colors.text}` : 'none', outlineOffset: 2,
                   }}
                 >
-                  <div style={{ fontFamily: fontDisplay, fontSize: 22, fontWeight: 800, color: '#fff' }}>{c.value}</div>
+                  <div style={{ fontFamily: fontDisplay, fontSize: 22, fontWeight: 800, color: colors.heatTinta }}>{c.value}</div>
                 </div>
               ))}
             </div>
@@ -159,7 +159,7 @@ export default function CampoScreen() {
           fontSize: 11, color: colors.mutedDark, pointerEvents: 'none',
         }}>
           <span>Menos</span>
-          <span style={{ display: 'inline-block', width: 90, height: 5, borderRadius: 3, background: 'linear-gradient(90deg,#17324a,#2f6fd6,#f5a623)' }} />
+          <span style={{ display: 'inline-block', width: 90, height: 5, borderRadius: 3, background: 'linear-gradient(90deg, var(--heat-1), var(--heat-4), var(--heat-7))' }} />
           <span>Mais</span>
           {modo === '3d' && <span style={{ marginLeft: 10 }}>· arraste para girar</span>}
         </div>

@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { colors, fontDisplay } from '../colors';
+import { colors, fontDisplay, rotulo } from '../colors';
 import { useApp } from '../store';
 
 export default function Header() {
@@ -32,27 +32,31 @@ export default function Header() {
 
   return (
     <div
+      data-plano="escuro"
       style={{
-        position: 'sticky', top: 0, zIndex: 50, display: 'flex', alignItems: 'center',
-        justifyContent: 'space-between', padding: '14px 28px', background: colors.headerBg,
+        position: 'sticky', top: 0, zIndex: 50, display: 'flex', alignItems: 'stretch',
+        justifyContent: 'space-between', padding: '0 24px', background: colors.headerBg,
         borderBottom: `1px solid ${colors.headerBorder}`, flexWrap: 'wrap', gap: 10,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ width: 12, height: 12, background: colors.blue, transform: 'rotate(45deg)', borderRadius: 2 }} />
-        <div style={{ fontFamily: fontDisplay, fontWeight: 800, fontSize: 20, letterSpacing: 0.5 }}>
-          FUT7 <span style={{ color: colors.muted, fontWeight: 600 }}>ANALYTICS</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 0' }}>
+        {/* A rule, not a badge: the mark is the type. */}
+        <div style={{ width: 3, alignSelf: 'stretch', background: colors.blue }} />
+        <div style={{ fontFamily: fontDisplay, fontWeight: 800, fontSize: 21, letterSpacing: 0.4, lineHeight: 1 }}>
+          FUT7
         </div>
+        <div style={{ ...rotulo, color: colors.mutedDark, paddingTop: 2 }}>Analytics</div>
       </div>
-      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
         {tabs.map((t) => (
           <div
             key={t.key}
             onClick={t.onClick}
             style={{
-              padding: '10px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              padding: '16px 14px 14px', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap',
+              fontWeight: t.active ? 700 : 500,
               color: t.active ? colors.text : colors.muted,
-              borderBottom: `2px solid ${t.active ? colors.blue : 'transparent'}`,
+              boxShadow: t.active ? `inset 0 -2px 0 ${colors.blue}` : 'none',
             }}
           >
             {t.label}
