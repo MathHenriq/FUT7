@@ -234,6 +234,15 @@ export default function SessoesScreen() {
                 : `${s.escalacao.length} jogadores`}
             </div>
             <div style={{ fontSize: 12, color: colors.muted }}>{eventosPorSessao(s.id)} eventos</div>
+            <div
+              onClick={(e) => { e.stopPropagation(); navigate(`/sessao/${s.id}`); }}
+              style={{
+                fontSize: 12, fontWeight: 600, color: colors.blue, padding: '5px 10px',
+                border: `1px solid ${colors.chipBorder}`, borderRadius: 3,
+              }}
+            >
+              Análise
+            </div>
           </div>
         ))}
       </div>

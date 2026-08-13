@@ -37,7 +37,7 @@ export function prioridade(i: Ideia): number {
 
 /** Bumped whenever the seeded backlog gains items, so they reach installs that already
  *  have a stored list — without touching anything the user edited or moved. */
-export const SEED_IDEIAS_VERSAO = 3;
+export const SEED_IDEIAS_VERSAO = 4;
 
 type Semente = Omit<Ideia, 'id' | 'criadoEm' | 'atualizadoEm'>;
 
@@ -121,7 +121,7 @@ const sementes: Semente[] = [
   {
     titulo: 'Attack Momentum',
     descricao: 'Gráfico da oscilação de pressão ao longo do jogo. Calculável hoje: já registramos lado, minuto e local de cada evento. Melhor retorno visual por linha de código de todo o projeto, e vira assinatura do app.',
-    area: 'analise', status: 'ideia', impacto: 3, esforco: 1,
+    area: 'analise', status: 'feito', impacto: 3, esforco: 1,
     referencia: 'Sofascore',
   },
   {

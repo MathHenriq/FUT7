@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-
 import Header from './components/Header';
 import Plano from './components/Plano';
 import SessoesScreen from './components/SessoesScreen';
+import SessaoScreen from './components/SessaoScreen';
 import RegistroScreen from './components/RegistroScreen';
 import ElencoScreen from './components/ElencoScreen';
 import CampoScreen from './components/CampoScreen';
@@ -32,6 +33,7 @@ export default function App() {
 
             {/* Reading: dense tables, comparison, reports. */}
             <Route path="/sessoes" element={<Plano tipo="claro"><SessoesScreen /></Plano>} />
+            <Route path="/sessao/:sessaoId" element={<Plano tipo="claro"><SessaoScreen /></Plano>} />
             <Route path="/elenco" element={<Plano tipo="claro"><ElencoScreen /></Plano>} />
             <Route path="/jogador/:jogadorId" element={<Plano tipo="claro"><JogadorScreen /></Plano>} />
             <Route path="/dashboard" element={<Plano tipo="claro"><DashboardScreen /></Plano>} />
