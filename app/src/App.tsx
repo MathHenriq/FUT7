@@ -5,6 +5,7 @@ import SessoesScreen from './components/SessoesScreen';
 import SessaoScreen from './components/SessaoScreen';
 import CompararScreen from './components/CompararScreen';
 import RelatorioScreen from './components/RelatorioScreen';
+import BuscarScreen from './components/BuscarScreen';
 import RegistroScreen from './components/RegistroScreen';
 import ElencoScreen from './components/ElencoScreen';
 import CampoScreen from './components/CampoScreen';
@@ -38,6 +39,7 @@ export default function App() {
             <Route path="/sessao/:sessaoId" element={<Plano tipo="claro"><SessaoScreen /></Plano>} />
             <Route path="/elenco" element={<Plano tipo="claro"><ElencoScreen /></Plano>} />
             <Route path="/jogador/:jogadorId" element={<Plano tipo="claro"><JogadorScreen /></Plano>} />
+            <Route path="/buscar" element={<Plano tipo="claro"><BuscarScreen /></Plano>} />
             <Route path="/comparar" element={<Plano tipo="claro"><CompararScreen /></Plano>} />
             <Route path="/relatorio/:jogadorId" element={<Plano tipo="claro"><RelatorioScreen /></Plano>} />
             <Route path="/dashboard" element={<Plano tipo="claro"><DashboardScreen /></Plano>} />

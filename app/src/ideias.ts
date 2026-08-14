@@ -37,7 +37,7 @@ export function prioridade(i: Ideia): number {
 
 /** Bumped whenever the seeded backlog gains items, so they reach installs that already
  *  have a stored list — without touching anything the user edited or moved. */
-export const SEED_IDEIAS_VERSAO = 6;
+export const SEED_IDEIAS_VERSAO = 7;
 
 type Semente = Omit<Ideia, 'id' | 'criadoEm' | 'atualizadoEm'>;
 
@@ -76,7 +76,7 @@ const sementes: Semente[] = [
   {
     titulo: 'Busca por critério de estatística',
     descricao: 'Filtrar jogadores observados por número, posição, idade e faixa de métrica. É o que faz o banco de observações virar ferramenta de decisão em vez de arquivo morto.',
-    area: 'scouting', status: 'ideia', impacto: 2, esforco: 2,
+    area: 'scouting', status: 'feito', impacto: 2, esforco: 2,
     referencia: 'Wyscout Advanced Search',
   },
   {
