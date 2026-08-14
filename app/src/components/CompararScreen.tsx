@@ -3,10 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { colors, fontDisplay, rotulo } from '../colors';
 import { curtoPosicao } from '../data';
 import { POOL_MINIMO, useComparacao, type Base, type Escopo } from '../hooks/useComparacao';
+import RadarComparacao, { RADAR_MAX } from './RadarComparacao';
 
 /** Fixed slots, not a growing list. A player keeps the colour of the slot they
  *  were put in, so removing someone never repaints the ones who stayed — colour
  *  follows the player, never their position in the list. */
+/** Which of the two readings is on screen. Bars are the precise one; the radar is
+ *  the shape-at-a-glance one. Same numbers underneath. */
+type Vista = 'barras' | 'radar';
+
 const SLOTS = 4;
 const CORES = [colors.serie1, colors.serie2, colors.serie3, colors.serie4];
 
@@ -15,6 +20,7 @@ export default function CompararScreen() {
   const [slots, setSlots] = useState<(string | null)[]>(() => new Array(SLOTS).fill(null));
   const [base, setBase] = useState<Base>('quarenta');
   const [escopo, setEscopo] = useState<Escopo>('todos');
+  const [vista, setVista] = useState<Vista>('barras');
 
   const ids = useMemo(() => slots.filter((s): s is string => s !== null), [slots]);
   const c = useComparacao(ids, base, escopo);
@@ -139,8 +145,17 @@ export default function CompararScreen() {
             </Aviso>
           )}
 
+          {vista === 'radar' && ids.length > RADAR_MAX && (
+            <Aviso>
+              <b>O radar mostra {RADAR_MAX} de cada vez.</b> Aqui os polígonos se sobrepõem, então
+              qualquer par de cores pode encostar — e no teste de daltonismo a quarta cor deixa de
+              se separar das outras. É limite da forma, não da paleta: nenhuma quarta cor passa.
+              Os {ids.length} aparecem em Barras.
+            </Aviso>
+          )}
+
           <div style={painel}>
-            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 16, alignItems: 'center' }}>
               {cEfetivo.linhas.map((l) => (
                 <span key={l.jogador.id} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12.5 }}>
                   <i style={{ width: 10, height: 10, borderRadius: 1, background: CORES[slotDe(l.jogador.id)], display: 'inline-block' }} />
@@ -150,8 +165,20 @@ export default function CompararScreen() {
                   </span>
                 </span>
               ))}
+              <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
+                <div onClick={() => setVista('barras')} style={botao(vista === 'barras')}>Barras</div>
+                <div onClick={() => setVista('radar')} style={botao(vista === 'radar')}>Radar</div>
+              </div>
             </div>
 
+            {vista === 'radar' ? (
+              <RadarComparacao
+                linhas={cEfetivo.linhas.slice(0, RADAR_MAX)}
+                metricas={cEfetivo.metricas}
+                cores={cEfetivo.linhas.slice(0, RADAR_MAX).map((l) => CORES[slotDe(l.jogador.id)])}
+                sufixoBase={sufixoBase}
+              />
+            ) : (
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               {cEfetivo.metricas.map((m, mi) => (
                 <div
@@ -197,10 +224,13 @@ export default function CompararScreen() {
                 </div>
               ))}
             </div>
+            )}
 
-            <div style={{ ...rotulo, color: colors.mutedDark, marginTop: 14 }}>
-              Barra = posição no grupo · número = valor
-            </div>
+            {vista === 'barras' && (
+              <div style={{ ...rotulo, color: colors.mutedDark, marginTop: 14 }}>
+                Barra = posição no grupo · número = valor
+              </div>
+            )}
           </div>
 
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
