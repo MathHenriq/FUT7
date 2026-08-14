@@ -54,7 +54,18 @@ export default function JogadorScreen() {
 
   return (
     <div style={{ padding: '24px 32px 48px', display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 1180, margin: '0 auto' }}>
-      <div onClick={() => navigate('/elenco')} style={{ fontSize: 12, color: colors.muted, cursor: 'pointer' }}>‹ Jogadores</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div onClick={() => navigate('/elenco')} style={{ fontSize: 12, color: colors.muted, cursor: 'pointer' }}>‹ Jogadores</div>
+        <div
+          onClick={() => navigate(`/relatorio/${jogador?.id}`)}
+          style={{
+            marginLeft: 'auto', padding: '7px 14px', border: `1px solid ${colors.chipBorder}`,
+            borderRadius: 3, fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
+          }}
+        >
+          Relatório de observação
+        </div>
+      </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
         <div style={{

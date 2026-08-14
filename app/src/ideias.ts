@@ -37,7 +37,7 @@ export function prioridade(i: Ideia): number {
 
 /** Bumped whenever the seeded backlog gains items, so they reach installs that already
  *  have a stored list — without touching anything the user edited or moved. */
-export const SEED_IDEIAS_VERSAO = 5;
+export const SEED_IDEIAS_VERSAO = 6;
 
 type Semente = Omit<Ideia, 'id' | 'criadoEm' | 'atualizadoEm'>;
 
@@ -70,7 +70,7 @@ const sementes: Semente[] = [
   {
     titulo: 'Relatório de observação exportável',
     descricao: 'Fechar a observação num documento: quem foi visto, contra quem, o que fez, pontos fortes e fracos, e o parecer. É o entregável do olheiro — sem ele o trabalho fica preso no app.',
-    area: 'scouting', status: 'ideia', impacto: 3, esforco: 2,
+    area: 'scouting', status: 'feito', impacto: 3, esforco: 2,
     referencia: 'Wyscout · Driblab',
   },
   {

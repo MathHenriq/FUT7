@@ -34,6 +34,22 @@ export type VinculoJogador = 'elenco' | 'observado';
  *  conversion rate computable and gives missed shots somewhere to live. */
 export type ResultadoFin = 'gol' | 'defendida' | 'trave' | 'fora' | 'bloqueada';
 
+/** What the scout concluded. Deliberately separate from the numbers: the report
+ *  exists precisely because a table is not a verdict, and somebody has to sign it. */
+export type Recomendacao = 'contratar' | 'seguir-observando' | 'nao-serve';
+
+export interface Avaliacao {
+  parecer?: string;
+  /** Written by hand, on top of whatever the percentiles already flag. The scout
+   *  sees things no event ever records — corpo, cabeça, como reage ao erro. */
+  fortes?: string[];
+  fracos?: string[];
+  recomendacao?: Recomendacao;
+  /** Who signed it, so a report handed to somebody else has an author. */
+  autor?: string;
+  atualizadoEm?: number;
+}
+
 export interface Jogador {
   id: string;
   nome: string;
@@ -46,6 +62,8 @@ export interface Jogador {
   idade?: number;
   pePreferido?: 'direito' | 'esquerdo' | 'ambos';
   nota?: string;
+  /** Present once somebody has written a report on this player. */
+  avaliacao?: Avaliacao;
 }
 
 export interface EventButton {

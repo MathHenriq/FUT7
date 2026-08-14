@@ -518,3 +518,62 @@ input[type="number"] {
   .cmp-valor { min-width: 50px; }
   .cmp-rank { min-width: 54px; font-size: 10px; }
 }
+
+/* ---- Relatório de observação ---- */
+
+.rel-grade {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 28px;
+}
+
+.rel-grade2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+@media (max-width: 760px) {
+  .rel-grade, .rel-grade2 { grid-template-columns: 1fr; }
+  .rel-grade2 { gap: 14px; }
+}
+
+/* Print is the actual export path for a scouting report: it is what produces a
+   PDF anybody can open. So the page has to become a document — no app chrome,
+   no dark ground, and nothing that only exists to be clicked. */
+@media print {
+  body {
+    background: #fff;
+    color: #000;
+  }
+  [data-plano] {
+    background: #fff;
+    color: #000;
+  }
+  .rel-esconder,
+  .rel-page ~ *,
+  header,
+  nav {
+    display: none !important;
+  }
+  /* The sticky app header is a div, not a landmark — hide it by position. */
+  body > #root > [data-plano] > div:first-child {
+    display: none !important;
+  }
+  .rel-page {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+  .rel-grade2 { grid-template-columns: 1fr 1fr; }
+  input, textarea {
+    border: none !important;
+    background: transparent !important;
+    padding-left: 0 !important;
+    color: #000 !important;
+    resize: none !important;
+  }
+  /* A report states its verdict; it does not show the picker it was chosen from. */
+  .rel-opcao-off { display: none !important; }
+  .rel-opcao { border: none !important; background: transparent !important; padding-left: 0 !important; }
+  @page { margin: 16mm; }
+}
