@@ -37,7 +37,7 @@ export function prioridade(i: Ideia): number {
 
 /** Bumped whenever the seeded backlog gains items, so they reach installs that already
  *  have a stored list — without touching anything the user edited or moved. */
-export const SEED_IDEIAS_VERSAO = 4;
+export const SEED_IDEIAS_VERSAO = 5;
 
 type Semente = Omit<Ideia, 'id' | 'criadoEm' | 'atualizadoEm'>;
 
@@ -64,7 +64,7 @@ const sementes: Semente[] = [
   {
     titulo: 'Comparação de jogadores por percentil',
     descricao: 'Colocar dois ou mais jogadores lado a lado nas mesmas métricas, normalizados por tempo jogado. É o núcleo de qualquer decisão de scouting: sem comparação, número isolado não diz se é bom.',
-    area: 'scouting', status: 'ideia', impacto: 3, esforco: 2,
+    area: 'scouting', status: 'feito', impacto: 3, esforco: 2,
     referencia: 'StatsBomb radars · Wyscout advanced search',
   },
   {

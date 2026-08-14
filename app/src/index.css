@@ -467,3 +467,54 @@ input[type="number"] {
     height: 420px;
   }
 }
+
+/* ---- Comparação de jogadores ---- */
+
+.cmp-linha {
+  display: grid;
+  grid-template-columns: minmax(150px, 190px) 1fr;
+  gap: 18px;
+  padding: 14px 0;
+}
+
+.cmp-barras {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  justify-content: center;
+}
+
+.cmp-barra-linha {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* The track must never be allowed to flex away to nothing — a bar chart whose
+   bars have zero width is just a table with extra steps. */
+.cmp-trilho {
+  flex: 1 1 90px;
+  min-width: 90px;
+  height: 10px;
+  background: var(--painel-2);
+  border-radius: 2px;
+}
+
+.cmp-valor {
+  min-width: 58px;
+  text-align: right;
+}
+
+.cmp-rank {
+  min-width: 62px;
+}
+
+@media (max-width: 720px) {
+  .cmp-linha {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 12px 0;
+  }
+  .cmp-valor { min-width: 50px; }
+  .cmp-rank { min-width: 54px; font-size: 10px; }
+}
